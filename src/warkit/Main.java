@@ -25,7 +25,14 @@ public class Main {
 
     public static void main(String[] args) {
         
-        WarKit wk = WarKit.load(Paths.get("../WarExport/WKDB.dat"));
+        WarKit wk = WarKit.load(Paths.get("../WarExport/WKDB.dat"));        
+        HttpCache hc = new HttpCache();
+        Armory a = new Armory(wk, hc);
+        
+        if (false) {
+            a.getRealmList(RegionT.EU).forEach(System.out::println);
+            return;
+        }
         
         if (true) {
             
@@ -57,8 +64,6 @@ public class Main {
         }
         
         
-        HttpCache hc = new HttpCache();
-
         if (false) {
             for (Wearable x: wk.wearableMap.values()) {
                 if (x.namedBonuses != null && x.nameDesc != null) {
@@ -69,7 +74,6 @@ public class Main {
             return;
         }
         
-        Armory a = new Armory(wk, hc);
         
         
         if (true) { 
