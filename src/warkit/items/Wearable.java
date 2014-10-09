@@ -40,8 +40,8 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
     public final Upgrade upgrade;
     public final int pvpItemLevelDelta;
     public final RandomSuffixGroup suffixGroup;
-    public final NamedItemBonus[] namedBonuses;
-    public final AuxBonusGroup auxBonusGroup;
+    public final BonusGroup namedBonusGroup;
+    public final BonusGroup auxBonusGroup;
     public final Wearable[] group;
     public final int groupIndex;
     public final ItemSet set;
@@ -58,7 +58,7 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
             String nameDesc, int reqLevel, int reqLevelMax, int reqLevelCurveId, 
             StatAlloc[] statAllocs, SocketT[] sockets, Enchantment socketBonus,
             Upgrade upgrade, int pvpItemLevel,
-            RandomSuffixGroup suffixGroup, NamedItemBonus[] bonuses, AuxBonusGroup auxGroup,
+            RandomSuffixGroup suffixGroup, BonusGroup namedGroup, BonusGroup auxGroup,
             ItemSet set, Wearable[] group, int groupIndex, int[] itemSpells, boolean extraSocket
     ) {        
         super(
@@ -77,7 +77,7 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
         this.upgrade = upgrade;
         this.pvpItemLevelDelta = pvpItemLevel;
         this.suffixGroup = suffixGroup;
-        this.namedBonuses = bonuses;
+        this.namedBonusGroup = namedGroup;
         this.auxBonusGroup = auxGroup;
         this.set = set;
         this.group = group;
@@ -110,9 +110,9 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
                 sb.append(String.format("Suffix%02d: ", i + 1)).append(suffixGroup.suffixes[i]).append("\n");
             }                
         }        
-        if (namedBonuses != null) {
-            for (int i = 0; i < namedBonuses.length; i++) {
-                sb.append("NamedBonus").append(1 + i).append(": ").append(namedBonuses[i]).append("\n");
+        if (namedBonusGroup != null) {
+            for (int i = 0; i < namedBonusGroup.universe.length; i++) {
+                sb.append("NamedBonus").append(1 + i).append(": ").append(namedBonusGroup.universe[i]).append("\n");
             }
         }
         if (auxBonusGroup != null) {

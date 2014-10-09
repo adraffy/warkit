@@ -19,7 +19,7 @@ public class Armor extends Wearable<ArmorT> {
             String nameDesc, int reqLevel, int reqLevelMax, int reqLevelCurveId, 
             StatAlloc[] statAllocs, SocketT[] sockets, Enchantment socketBonus,
             Upgrade upgrade, int pvpItemLevel, 
-            RandomSuffixGroup suffixGroup, NamedItemBonus[] bonuses, AuxBonusGroup auxGroup,
+            RandomSuffixGroup suffixGroup, BonusGroup namedGroup, BonusGroup auxGroup,
             ItemSet set, Wearable[] group, int groupIndex, int[] spellIds, boolean extraSocket
     ) {        
         super(
@@ -30,7 +30,7 @@ public class Armor extends Wearable<ArmorT> {
                 nameDesc, reqLevel, reqLevelMax, reqLevelCurveId, 
                 statAllocs, sockets, socketBonus,
                 upgrade, pvpItemLevel,
-                suffixGroup, bonuses, auxGroup,
+                suffixGroup, namedGroup, auxGroup,
                 set, group, groupIndex, spellIds, extraSocket
         );
     }

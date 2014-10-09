@@ -35,46 +35,9 @@ public class Main {
         }
         
         if (true) {
-            
-            System.out.println(wk.itemBonusMap.get(499));
-            System.out.println(wk.itemBonusMap.get(524));
-            
-            System.out.println(wk.wearableMap.get(114700));
-         
-            
-            for (Wearable x: wk.wearableMap.values()) {
-                if (x.namedBonuses != null) {
-                    boolean found = false;
-                    for (NamedItemBonus b: x.namedBonuses) {
-                        for (ItemBonus y: b.components) {
-                            if (y.id == 566) {
-                                found = true;
-                                break;                                
-                            }                            
-                        }
-                    }
-                    if (found) {
-                        System.out.println(x.itemId + " # " + x.name);
-                    }
-                }
-                
-            }
-            
+            wk.wearableMap.get(116182).dump();
             return;
         }
-        
-        
-        if (false) {
-            for (Wearable x: wk.wearableMap.values()) {
-                if (x.namedBonuses != null && x.nameDesc != null) {
-                    System.out.println(x);
-                }
-
-            }
-            return;
-        }
-        
-        
         
         if (true) { 
             Player p = a.getPlayer("Edgy", "Suramar", RegionT.US, false, System.out::println);

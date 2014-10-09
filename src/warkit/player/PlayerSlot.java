@@ -1,5 +1,6 @@
 package warkit.player;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import warbase.IntSet;
@@ -26,6 +27,7 @@ import warkit.items.Enchantment;
 import warkit.items.Gem;
 import warkit.items.Item;
 import warkit.items.ItemBonus;
+import warkit.items.BonusGroup;
 import warkit.items.NamedItemBonus;
 import warkit.items.Unique;
 import warkit.items.UpgradeChain;
@@ -67,7 +69,7 @@ public class PlayerSlot {
     int _baseArmor;
     final StatMap _gearStats = new StatMap();
     final StatMap _socketBonusStats = new StatMap();
-    
+    //final ArrayList<ItemBonus> _customBonuses = new ArrayList<>();    
     float _weaponDamage;
     
     public int getGemCount() {
@@ -121,14 +123,19 @@ public class PlayerSlot {
             setItem(item);
             return;
         }
-        
+        AbstractEnchant enchant = _enchant;
         boolean extraSocket = _extraSocket;
         Gem[] gems = new Gem[_socketCount];
         for (int i = 0; i < _socketCount; i++) {
             gems[i] = _socket[i]._gem;
         }        
-        setItem(item);
-        setExtraSocket(extraSocket && canExtraSocket());
+        setItem(item); // warning: can fail
+        setExtraSocket(extraSocket && canExtraSocket()); // cant fail
+        try {
+            setEnchant(enchant);
+        } catch (PlayerError err) {
+            // ignore
+        }
         for (int i = 0; i < _socketCount; i++) {
             try {
                 _socket[i].setGem(gems[i]);
@@ -186,7 +193,10 @@ public class PlayerSlot {
             }
         }     
         clear();
-        _item = (Wearable)item;        
+        _item = (Wearable)item;       
+        if (_item.namedBonusGroup != null) {
+            _namedBonusIndex = _item.namedBonusGroup.defaultIndex; // fuckign default to raid finder my ass!
+        }
         if (slotType == SlotT.MAIN_HAND) {
             owner._bothHandsForMH = bothHands;
         }        
@@ -339,14 +349,21 @@ public class PlayerSlot {
         } 
         return _item.suffixGroup.suffixes[_suffixIndex];
     }
+    /*
+    public void setCustomItemBonus(ItemBonus bonus, boolean enable) {
+        if (enable) {
+            
+        }        
+    }    
+    */
     public void setNamedBonusIndex(int index) {
         if (_item == null) {
             return;
         }
-        if (_item.namedBonuses == null) {
+        if (_item.namedBonusGroup == null) {
             throw new PlayerError.EquipSlot(this, _item, "No Named Item Bonuses");
         }
-        if (index < 0 || index >= _item.namedBonuses.length) {
+        if (index < 0 || index >= _item.namedBonusGroup.universe.length) {
             throw new PlayerError.EquipSlot(this, _item, "Invalid Named Item Bonus Index: " + index);
         }
         _namedBonusIndex = index;
@@ -356,8 +373,8 @@ public class PlayerSlot {
     public int getNamedBonusIndex() {
         return _namedBonusIndex;
     }
-    public NamedItemBonus[] getNamedBonuses() {
-        return _item == null ? null : _item.namedBonuses;
+    public BonusGroup getNamedBonuses() {
+        return _item == null ? null : _item.namedBonusGroup;
     }    
     
     public void setAuxBonusIndex(int index) {        
@@ -376,17 +393,17 @@ public class PlayerSlot {
     public int getAuxBonusIndex() {
         return _auxBonusIndex;
     }
-    public AuxBonusGroup getAuxBonuses() {
+    public BonusGroup getAuxBonuses() {
         return _item == null ? null : _item.auxBonusGroup;
     }
-    public IntSet getBonuses() {
+    public IntSet getItemBonuses() {
         IntSet set = new IntSet();
-        getBonuses(set);
+        getItemBonuses(set);
         return set;
     }
-    public void getBonuses(IntSet set) {
-        if (_item.namedBonuses != null) {     
-            for (ItemBonus x: _item.namedBonuses[_namedBonusIndex].components) {
+    public void getItemBonuses(IntSet set) {
+        if (_item.namedBonusGroup != null) {     
+            for (ItemBonus x: _item.namedBonusGroup.universe[_namedBonusIndex].components) {
                 set.add(x.id);
             }
         }
@@ -397,16 +414,16 @@ public class PlayerSlot {
         }
     }    
     // warning: mutates set, leaves unused bonuses
-    public void setBonuses(IntSet set) {
+    public void setItemBonuses(IntSet set) {
         if (_item == null) {
             if (set != null && !set.isEmpty()) {
                 throw new PlayerError.Slot(this, "Cannot set bonuses: Empty Slot");
             }
             return;
         } 
-        if (_item.namedBonuses != null) {                        
+        if (_item.namedBonusGroup != null) {                        
             int bestIndex = 0;
-            NamedItemBonus[] v = _item.namedBonuses;
+            NamedItemBonus[] v = _item.namedBonusGroup.universe;
             double bestScore = ItemBonus.score(v[0].components, set);
             for (int i = 1; i < v.length; i++) {
                 double score = ItemBonus.score(v[i].components, set);
@@ -474,8 +491,8 @@ public class PlayerSlot {
             _reqLevel = _item.reqLevel;
             ilvl = _item.itemLevel;
         } 
-        if (_item.namedBonuses != null) {
-            NamedItemBonus bonus = _item.namedBonuses[_namedBonusIndex];
+        if (_item.namedBonusGroup != null) {
+            NamedItemBonus bonus = _item.namedBonusGroup.universe[_namedBonusIndex];
             ilvl += bonus.itemLevelDelta; 
             _reqLevel += bonus.reqLevelDelta;
             _nameDesc = bonus.name;

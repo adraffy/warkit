@@ -10,8 +10,8 @@ import warbase.types.SocketT;
 
 public class ItemBonus {
     
-    static public final ItemBonus IDENTITY = new ItemBonus(0, 0, 0, null, "Normal", null, null, null);
-        
+    //static public final ItemBonus IDENTITY = new ItemBonus(0, 0, 0, null, "Normal", null, null, null);
+    
     public final int id;
     public final int itemLevelDelta;
     public final int reqLevelDelta;
@@ -20,7 +20,7 @@ public class ItemBonus {
     public final String suffixName; // can be null
     public final SocketT[] sockets; // can be null
     public final StatAlloc[] statAllocs; // can be null
-    public final boolean something;
+    //public final boolean something;
     
     public ItemBonus(int id, int itemLevelDelta, int reqLevelDelta, QualityT quality, String nameDesc, String suffixName, SocketT[] sockets, StatAlloc[] statAllocs) {
         this.id = id;
@@ -31,13 +31,13 @@ public class ItemBonus {
         this.suffixName = suffixName;
         this.sockets = sockets;
         this.statAllocs = statAllocs;
-        something = itemLevelDelta != 0 
+        /*something = itemLevelDelta != 0 
                 || reqLevelDelta != 0
                 || quality != null
                 || nameDesc != null
                 || suffixName != null
                 || sockets != null
-                || statAllocs != null;
+                || statAllocs != null;*/
     }
     
     @Override
@@ -45,6 +45,18 @@ public class ItemBonus {
         return String.format("%s<%s>(%+di,%+dr,%s,%s,%s,%s)", getClass().getSimpleName(), id, 
                 itemLevelDelta, reqLevelDelta, quality, nameDesc, suffixName, 
                 Arrays.toString(sockets), Arrays.toString(statAllocs));
+    }
+    
+    // we can use equality because we memo everything
+    public boolean isEffectivelyEqual(ItemBonus other) {
+        return other != null 
+                && other.itemLevelDelta == itemLevelDelta
+                && other.nameDesc == nameDesc
+                && other.quality == quality
+                && other.reqLevelDelta == reqLevelDelta
+                && other.suffixName == suffixName
+                && other.sockets == sockets
+                && other.statAllocs == statAllocs;
     }
     
     static public final Comparator<ItemBonus> CMP_ID = (a, b) -> a.id - b.id;

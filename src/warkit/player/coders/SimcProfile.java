@@ -91,9 +91,11 @@ public class SimcProfile {
     static class R<T extends TypeT> {
         final HashMap<T,String> aMap = new HashMap<>();
         final TreeMap<String,T> bMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        void add(T a, String b) {
-            aMap.put(a, b);
-            bMap.put(b, a);
+        void add(T a, String... b) {
+            aMap.put(a, b[0]); // first is gud
+            for (String x: b) {
+                bMap.put(x, a);
+            }
         }
         void add(T a) {
             add(a, underscore(a.name));
@@ -114,10 +116,10 @@ public class SimcProfile {
     static {
         SLOTS.add(SlotT.HEAD,       "head");
         SLOTS.add(SlotT.NECK,       "neck");
-        SLOTS.add(SlotT.SHOULDER,   "shoulder");
+        SLOTS.add(SlotT.SHOULDER,   "shoulders", "shoulder");
         SLOTS.add(SlotT.BACK,       "back");
         SLOTS.add(SlotT.CHEST,      "chest");
-        SLOTS.add(SlotT.WRIST,      "wrist");
+        SLOTS.add(SlotT.WRIST,      "wrists", "wrist");
         SLOTS.add(SlotT.HANDS,      "hands");
         SLOTS.add(SlotT.WAIST,      "waist");
         SLOTS.add(SlotT.LEGS,       "legs");
@@ -186,7 +188,7 @@ public class SimcProfile {
         int lineno = 0;
         //boolean first = true;
         //IntSet bonuses = new IntSet();
-        ArrayList<Gem> gemBuf = new ArrayList();
+        //ArrayList<Gem> gemBuf = new ArrayList();
         IntSet bonuses = new IntSet();
         boolean guessPanda = false;
         ClassT cls = null;
@@ -277,7 +279,8 @@ public class SimcProfile {
                         guessPanda = false;
                         continue;                        
                     }
-                    case "role":                        
+                    case "role":    
+                    case "position":
                     case "glyphs":
                     case "talents": 
                     case "professions": {                        
@@ -406,7 +409,8 @@ public class SimcProfile {
                 continue; // fatal
             }            
             try {
-                slot.setBonuses(bonuses);
+                bonuses = wk.repairItemBonuses(item, bonuses); // since the ids are often wrong               
+                slot.setItemBonuses(bonuses);
             } catch (PlayerError err) {
                 errors.add(new LineError(lineno, line0, err.getMessage()));
             }            
@@ -524,7 +528,7 @@ public class SimcProfile {
             sb.append(",id=");
             sb.append(item.itemId);
             setBuf.clear();
-            x.getBonuses(setBuf);
+            x.getItemBonuses(setBuf);
             int n = setBuf.size();
             if (n > 0) {
                 sb.append(",bonus_id=");

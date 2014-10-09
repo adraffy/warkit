@@ -24,7 +24,7 @@ public class Weapon extends Wearable<WeaponT> {
             String nameDesc, int reqLevel, int reqLevelMax, int reqLevelCurveId, 
             StatAlloc[] statAllocs, SocketT[] sockets, Enchantment socketBonus,
             Upgrade upgrade, int pvpItemLevel, 
-            RandomSuffixGroup suffixGroup, NamedItemBonus[] bonuses, AuxBonusGroup auxGroup,
+            RandomSuffixGroup suffixGroup, BonusGroup namedGroup, BonusGroup auxGroup,
             ItemSet set, Wearable[] group, int groupIndex, int[] itemSpells, boolean extraSocket,
             int speed, float range, boolean caster, int damageType
     ) {        
@@ -36,7 +36,7 @@ public class Weapon extends Wearable<WeaponT> {
                 nameDesc, reqLevel, reqLevelMax, reqLevelCurveId, 
                 statAllocs, sockets, socketBonus,
                 upgrade, pvpItemLevel,
-                suffixGroup, bonuses, auxGroup,
+                suffixGroup, namedGroup, auxGroup,
                 set, group, groupIndex, itemSpells, extraSocket
         );
         this.speed = speed;

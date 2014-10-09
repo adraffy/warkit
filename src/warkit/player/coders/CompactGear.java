@@ -404,7 +404,7 @@ public class CompactGear {
                     }                    
                 }     
                 try {
-                    slot.setBonuses(bonuses);
+                    slot.setItemBonuses(bonuses);
                 } catch (PlayerError err) {
                     errors.add(new LineError(lineno, line0, err.getMessage()));
                 }            
@@ -471,7 +471,7 @@ public class CompactGear {
                 }
             }
             bonuses.clear();
-            slot.getBonuses(bonuses);
+            slot.getItemBonuses(bonuses);
             if (!bonuses.isEmpty()) {
                 sb.append(" !");
                 sb.append(bonuses.keys[0]);
