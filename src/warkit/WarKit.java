@@ -151,7 +151,7 @@ public class WarKit {
         TreeMap<Integer,ItemBonus> itemBonusMap = new TreeMap<>();
 
         // internal
-        TreeMap<Integer,String> nameDescMap = new TreeMap<>();
+        //TreeMap<Integer,String> nameDescMap = new TreeMap<>();
         TreeMap<Integer,String> fileNameMap = new TreeMap();
         TreeMap<Integer,Enchantment> enchantmentMap = new TreeMap<>();
         TreeMap<Integer,Unique> uniqueMap = new TreeMap<>();
@@ -161,10 +161,11 @@ public class WarKit {
         TreeMap<Integer,RandomSuffixGroup> suffixGroupMap = new TreeMap<>();
         TreeMap<Integer,ItemGroup> itemGroupMap = new TreeMap<>();
         TreeMap<Integer,AuxBonusGroup> auxGroupMap = new TreeMap<>();
-
+        TreeMap<Integer,NamedItemBonus[]> namedUniMap = new TreeMap<>();
+        
         // memo
         TreeMap<SocketT[],SocketT[]> socketsMemo = new TreeMap<>(Misc.makeArrayComparator((a, b) -> Integer.compare(a.id, b.id)));     
-        TreeMap<NamedItemBonus[],NamedItemBonus[]> namedBonusesMemo = new TreeMap<>(Misc.makeArrayComparator((a, b) -> ItemBonus.CMP_ARRAY.compare(a.components, b.components))); 
+        //TreeMap<NamedItemBonus[],NamedItemBonus[]> namedBonusesMemo = new TreeMap<>(Misc.makeArrayComparator((a, b) -> ItemBonus.CMP_ARRAY.compare(a.components, b.components))); 
             
         try (DataInputStream in = new DataInputStream(new BufferedInputStream(Files.newInputStream(file)))) {
             int version = in.readInt();
@@ -174,8 +175,9 @@ public class WarKit {
             int uniqueCount = in.readInt();
             int enchantmentCount = in.readInt();
             int fileNameCount = in.readInt(); 
-            int nameDescCount = in.readInt(); 
+            //int nameDescCount = in.readInt(); 
             int itemBonusCount = in.readInt();
+            int namedUniCount = in.readInt();
             int auxGroupCount = in.readInt();
             int suffixCount = in.readInt();
             int suffixGroupCount = in.readInt();
@@ -233,12 +235,14 @@ public class WarKit {
                 }                
                 name = name.toLowerCase(); // convert to icon
                 fileNameMap.put(id, name);
-            }           
+            }      
+            /*
             for (int i = 0; i < nameDescCount; i++) {
                 int id = in.readUnsignedShort();
                 String name = in.readUTF();
                 nameDescMap.put(id, name);
-            }      
+            } 
+            */
             ArrayList<SocketT> socketBuf = new ArrayList<>();
             ArrayList<StatAlloc> statAllocBuf = new ArrayList<>();
             for (int i = 0; i < itemBonusCount; i++) {
@@ -246,9 +250,9 @@ public class WarKit {
                 int num = in.readUnsignedByte();
                 int itemLevelDelta = 0;
                 int reqLevelDelta = 0;
-                int nameDescId = 0;
+                String nameDesc = null;
                 QualityT quality = null;
-                int suffixNameDescId = 0;
+                String suffixName = null;
                 socketBuf.clear();
                 statAllocBuf.clear();
                 for (int j = 0; j < num; j++) {
@@ -265,11 +269,11 @@ public class WarKit {
                             break;
                         }
                         case ItemBonusType.NAME_DESC: {
-                            nameDescId = val1;
+                            nameDesc = strings[val1];
                             break;
                         }
                         case ItemBonusType.NAME_SUFFIX: {
-                            suffixNameDescId = val1;
+                            suffixName = strings[val1]; //DescId = val1;
                             break;
                         }
                         case ItemBonusType.SOCKET: {
@@ -290,9 +294,7 @@ public class WarKit {
                         //default: System.err.println("Unused Item Bonus: " + type + "/" + val1 + "/" + val2);                            
                     }
                 }
-                ItemBonus b = new ItemBonus(id, itemLevelDelta, reqLevelDelta, quality, 
-                        nameDescMap.get(nameDescId), 
-                        nameDescMap.get(suffixNameDescId),
+                ItemBonus b = new ItemBonus(id, itemLevelDelta, reqLevelDelta, quality, nameDesc, suffixName,
                         socketBuf.isEmpty() ? null : socketBuf.toArray(new SocketT[socketBuf.size()]),
                         statAllocBuf.isEmpty() ? null : statAllocBuf.toArray(new StatAlloc[statAllocBuf.size()])
                 );
@@ -300,7 +302,23 @@ public class WarKit {
                 //FlatItemBonus f = new NamedItemBonus(null, itemLevelDelta, reqLevelDelta, nameDescMap.get(nameDescId));                
                 //flatItemBonusMap.put(id, f);
             }        
-            itemBonusMap.put(ItemBonus.IDENTITY.id, ItemBonus.IDENTITY); // hax?
+            // itemBonusMap.put(ItemBonus.IDENTITY.id, ItemBonus.IDENTITY); // hax?
+            
+            for (int i = 0; i < namedUniCount; i++) {
+                int id = in.readUnsignedByte();
+                String name0 = in.readUTF();
+                int num = in.readUnsignedByte();
+                NamedItemBonus[] universe = new NamedItemBonus[num];
+                for (int j = 0; j < num; j++) {
+                    int n = in.readUnsignedByte();
+                    ItemBonus[] bonuses = new ItemBonus[n];
+                    for (int k = 0; k < n; k++) {
+                        bonuses[k] = itemBonusMap.get(in.readUnsignedShort());
+                    }
+                    universe[j] = mergeItemBonuses(name0, bonuses);
+                }                
+                namedUniMap.put(id, universe);                
+            }            
             for (int i = 0; i < auxGroupCount; i++) {
                 int id = in.readUnsignedShort();
                 int num = in.readUnsignedByte();
@@ -333,7 +351,7 @@ public class WarKit {
                         }                   
                     }
                     if (n > 0) {
-                        uni.add(mergeItemBonuses(false, Arrays.copyOf(v, n)));
+                        uni.add(mergeItemBonuses(Arrays.copyOf(v, n)));
                     }
                 }              
                 set.sort(ItemBonus.CMP_ID);
@@ -590,37 +608,14 @@ public class WarKit {
                         
                         NamedItemBonus[] namedBonuses = null;  
                         String nameDesc = null;
-                        int bonusCount = in.readUnsignedByte();
-                        if (bonusCount > 0) {
-                            itemBonusBuf.clear();
-                            ItemBonus mixinBonus = itemBonusMap.get(in.readUnsignedShort());
-                            for (int i = 0; i < bonusCount; i++) {
-                                int id = in.readUnsignedShort();                                
-                                ItemBonus bonus = itemBonusMap.get(id);
-                                NamedItemBonus named = namedSingleMap.get(bonus);
-                                if (named == null) {                          
-                                    named = mergeItemBonuses(true, bonus);
-                                    namedSingleMap.put(bonus, named);
-                                }
-                                itemBonusBuf.add(named);
-                                if (mixinBonus != null && mixinBonus.id != 0) {
-                                    Integer key = bonus.id | (mixinBonus.id << 16);
-                                    NamedItemBonus mixed = namedMixinMap.get(key);
-                                    if (mixed == null) {
-                                        mixed = mergeItemBonuses(true, bonus, mixinBonus);
-                                        namedMixinMap.put(key, mixed);
-                                    }
-                                    itemBonusBuf.add(mixed);
-                                }     
-                                
-                                namedBonuses = itemBonusBuf.toArray(new NamedItemBonus[itemBonusBuf.size()]);
-                                Arrays.sort(namedBonuses, NamedItemBonus.CMP_ITEM_LEVEL);
-                                namedBonuses = memo(namedBonusesMemo, namedBonuses);                                
-                            }
+                        int namedBonusId = in.readUnsignedByte();
+                        if (namedBonusId > 0) {                            
+                            namedBonuses = namedUniMap.get(namedBonusId); // must exist                         
                         } else {
-                            int nameDescId = in.readUnsignedShort();                            
-                            nameDesc = nameDescMap.get(nameDescId);
-                           
+                            //int nameDescId = in.readUnsignedShort();                            
+                            //nameDesc = nameDescMap.get(nameDescId);                            
+                            nameDesc = indexedString.read();
+                            
                             
                             /*if (nameDesc == null && group != null) {
                                 nameDescId = 0;
@@ -800,42 +795,64 @@ public class WarKit {
         return new Enchantment(id, desc, minScalingLevel, maxScalingLevel, scalingId, scalingPerLevel, reqProf, reqProfSkill, statAllocs, profs, spells);       
     }
 
-    static private NamedItemBonus mergeItemBonuses(boolean named, ItemBonus... v) {
+    static private NamedItemBonus mergeItemBonuses(String emptyName, ItemBonus[] v) {
         QualityT qualityMax = null;
         int itemLevelDelta = 0;
         int reqLevelDelta = 0;
         ArrayList<String> names = new ArrayList<>();    
-        boolean identity = false;
         for (ItemBonus x: v) {
-            if (!x.something) {
-                continue;
-            } else if (x == ItemBonus.IDENTITY) {
-                identity = true;
-                continue;
-            }
             itemLevelDelta += x.itemLevelDelta;
             reqLevelDelta += x.reqLevelDelta;
             qualityMax = QualityT.max(qualityMax, x.quality);
             if (x.nameDesc != null) {
                 names.add(x.nameDesc);
+            }  
+        }
+        String sep = " ";
+        if (names.isEmpty()) {
+            if (qualityMax != null) {
+                names.add(qualityMax.name);
             }            
-            if (!named) {
-                if (x.sockets != null) {
-                    if (x.sockets.length == 1) {
-                        names.add(x.sockets[0].name);
+            if (itemLevelDelta != 0) {
+                names.add(String.format("%+d Item Level", itemLevelDelta));
+            }
+            sep = " / ";
+        }
+        if (names.isEmpty()) {
+            names.add(emptyName);
+        }
+        String name = names.stream().collect(Collectors.joining(sep));
+        Arrays.sort(v, ItemBonus.CMP_ID);
+        return new NamedItemBonus(v, name, itemLevelDelta, reqLevelDelta, qualityMax);           
+    }
+    
+    static private NamedItemBonus mergeItemBonuses(ItemBonus[] v) {
+        QualityT qualityMax = null;
+        int itemLevelDelta = 0;
+        int reqLevelDelta = 0;
+        ArrayList<String> names = new ArrayList<>();    
+        for (ItemBonus x: v) {
+            if (!x.something) {
+                continue;
+            } 
+            itemLevelDelta += x.itemLevelDelta;
+            reqLevelDelta += x.reqLevelDelta;
+            qualityMax = QualityT.max(qualityMax, x.quality);
+            if (x.sockets != null) {
+                if (x.sockets.length == 1) {
+                    names.add(x.sockets[0].name);
+                } else {
+                    SocketT sameColor = x.sockets[0];
+                    for (int i = 1; i < x.sockets.length; i++) {
+                        if (x.sockets[i] != sameColor) {
+                            sameColor = null;
+                            break;
+                        }                                    
+                    }
+                    if (sameColor != null) {
+                        names.add(x.sockets.length + "x " + sameColor);                                    
                     } else {
-                        SocketT sameColor = x.sockets[0];
-                        for (int i = 1; i < x.sockets.length; i++) {
-                            if (x.sockets[i] != sameColor) {
-                                sameColor = null;
-                                break;
-                            }                                    
-                        }
-                        if (sameColor != null) {
-                            names.add(x.sockets.length + "x " + sameColor);                                    
-                        } else {
-                            names.add(Arrays.toString(x.sockets));
-                        }
+                        names.add(Arrays.toString(x.sockets));
                     }
                 }
                 if (x.statAllocs != null) {
@@ -845,10 +862,7 @@ public class WarKit {
                 }
             }
         }
-        String sep = named ? " " : " + ";
-        if (names.isEmpty() && named && identity) {
-            names.add(ItemBonus.IDENTITY.nameDesc);
-        }        
+        String sep = " + ";
         if (names.isEmpty()) {
             if (qualityMax != null) {
                 names.add(qualityMax.name);

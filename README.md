@@ -3,6 +3,12 @@
 
 *Warning: this document is a work-in-progress.*
 
+####Instructions
+1. download single-jar library: WarKit.jar
+2. download latest database: WKDB.dat
+3. include WarKit in your Java project
+4. make sure WKDB.dat is accessible from your application
+
 ####Random Examples
 ```java
 // load warkit
