@@ -1,7 +1,7 @@
 #WarKit
 **A high-level World of Warcraft toolkit for Java**
 
-*Warning: this document is a work-in-progress.*
+WarKit is a single-jar library + external database file for Warlords of Draenor (WoD) theorycrafting and World of Warcraft (WoW) related applications.  WarKit provides a very friendly interface for anything item or spell related.  
 
 ####Instructions
 1. download single-jar library: WarKit.jar
@@ -9,7 +9,7 @@
 3. include WarKit in your Java project
 4. make sure WKDB.dat is accessible from your application
 
-####Random Examples
+####Random Code Examples
 ```java
 // load warkit
 WarKit wk = WarKit.load();
@@ -39,8 +39,9 @@ p.HANDS.setItem(wk.wearableMap.get(23456));
 p.getProf(0).setProf(ProfT.BS, 699);
 
 // most changes are dynamic, but some require manual validation
-p.playerLevel = 90;
-p.spec = SpecT.GUARDIAN;
+p.playerLevel = 90; 
+p.spec = SpecT.GUARDIAN; // change spec
+p.scaledItemLevel = -463; // global scaling (challenge mode)
 p.validate();
 
 // load to characters and diff them
@@ -63,5 +64,12 @@ Player p = SimcProfile.fromString("hands=bigswordofthebear,id=12345");
 String code = SimcProfile.toString(p);
 
 ```
+####Application Example
+I'm using WarKit as the backend for my WoD universal paper doll application **Apparatus**. 
+![Appartus Screenshot](https://github.com/adraffy/warkit/raw/master/apparatus-ss.png)
+
+I'm also using WarKit as the backend for my WoD Feral simulator **Catus**. 
+
+You can find out more about WarKit, WarBase, WarDBC, Apparatus, Catus, and others at the [Fluid Druid forums](http://fluiddruid.net/forum/viewtopic.php?f=3&t=4574).
 
 
