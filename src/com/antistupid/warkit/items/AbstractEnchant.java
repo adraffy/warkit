@@ -1,6 +1,6 @@
 package com.antistupid.warkit.items;
 
-import com.antistupid.warbase.StatMap;
+import com.antistupid.warbase.stats.StatMap;
 
 abstract public class AbstractEnchant {
 

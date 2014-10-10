@@ -7,7 +7,7 @@ import com.antistupid.warbase.IntSet;
 import com.antistupid.warbase.structs.RandomSuffix;
 import com.antistupid.warbase.structs.RandomSuffixGroup;
 import com.antistupid.warbase.structs.StatAlloc;
-import com.antistupid.warbase.StatMap;
+import com.antistupid.warbase.stats.StatMap;
 import com.antistupid.warbase.data.ArmorCurve;
 import com.antistupid.warbase.data.DamageCurve;
 import com.antistupid.warbase.data.ItemLevelCurve;
@@ -46,6 +46,20 @@ public class PlayerSlot {
             _socket[i] = new PlayerSocket(this, i);
         }
     } 
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(36);
+        sb.append(slotType.name);
+        sb.append(": ");
+        if (_item == null) {
+            sb.append("Empty");
+        } else {
+            appendItemName(sb, true, true);
+        }
+        return sb.toString();
+    }
+    
 
     Wearable _item; // item or weapon
     int _itemLevelCustom;    
@@ -87,7 +101,15 @@ public class PlayerSlot {
         return _item != null ? _socketCount : 0;
     }
     
-    public PlayerSocket getSocketAt(int i) {
+    public Gem[] copyGems() {
+        Gem[] gems = new Gem[_socketCount];
+        for (int i = 0; i < _socketCount; i++) {
+            gems[i] = _socket[i]._gem;
+        }   
+        return gems;
+    }
+    
+    public PlayerSocket getSocket(int i) {
         return i >= 0 && i < _socket.length ? _socket[i] : null;
     }
     
@@ -117,18 +139,14 @@ public class PlayerSlot {
         return _item;
     }
     public void swapItem(Item item) {
-        // we need to remember the gems
-        // and whatever else we can
         if (_item == null || item == null) {
             setItem(item);
             return;
         }
+        // fix me: remember more stuff
         AbstractEnchant enchant = _enchant;
         boolean extraSocket = _extraSocket;
-        Gem[] gems = new Gem[_socketCount];
-        for (int i = 0; i < _socketCount; i++) {
-            gems[i] = _socket[i]._gem;
-        }        
+        Gem[] gems = copyGems();
         setItem(item); // warning: can fail
         setExtraSocket(extraSocket && canExtraSocket()); // cant fail
         try {
@@ -456,9 +474,6 @@ public class PlayerSlot {
         return _reqLevel;
     }
     
-    public boolean canExtraSocket() {
-        return _item != null && (_item.extraSocket || (slotType == SlotT.WAIST && _itemLevelBase <= 600));
-    }
     public AbstractEnchant getEnchant() {
         return _enchant;
     }
@@ -496,8 +511,10 @@ public class PlayerSlot {
             ilvl += bonus.itemLevelDelta; 
             _reqLevel += bonus.reqLevelDelta;
             _nameDesc = bonus.name;
-            _quality = QualityT.max(_quality, bonus.quality);
-        } 
+            _quality = QualityT.max(_quality, bonus.quality); // necessary?
+        } else {
+            _nameDesc = _item.nameDesc;
+        }
         _itemLevelBase = ilvl;
         if (_itemLevelCustom > 0) {
             ilvl = _itemLevelCustom;            
@@ -541,8 +558,7 @@ public class PlayerSlot {
             Weapon w = (Weapon)_item;
             _weaponDamage = DamageCurve.get(ilvl, _quality, w.equip, w.type, w.caster);            
             _baseArmor = 0;            
-        }
-        
+        }        
         int oldSockets = _socketCount;
         int newSockets = 0;
         if (_item.sockets != null) {
@@ -629,10 +645,13 @@ public class PlayerSlot {
         return _socketBonusSatisfied;
     }
     
+    
+    public boolean canExtraSocket() {
+        return _item != null && (_item.extraSocket || (slotType == SlotT.WAIST && _itemLevelBase <= 600));
+    }
     public boolean getExtraSocket() {
         return _item != null && _extraSocket;
-    }
-    
+    }    
     public void setExtraSocket(boolean enabled) {
         if (_extraSocket == enabled) {
             return;
@@ -798,15 +817,7 @@ public class PlayerSlot {
         return _item == null ? null : _item.icon;
     }
 
-    
-    public String getItemName() {
-        return _item == null ? null : _item.name;
-    }
-    public String getItemName(boolean suffix, boolean nameDesc, boolean nullForEmpty) {
-        if (_item == null) {
-            return nullForEmpty ? null : "Empty " + slotType.name;
-        }
-        StringBuilder sb = new StringBuilder();
+    void appendItemName(StringBuilder sb, boolean suffix, boolean nameDesc) {
         if (isItemLevelScaled()) {
             sb.append("(");
             sb.append(getScaledItemLevel());
@@ -831,6 +842,17 @@ public class PlayerSlot {
                 sb.append(")");
             }        
         }
+    }
+    
+    public String getItemBaseName() {
+        return _item == null ? null : _item.name;
+    }    
+    public String getItemName(boolean suffix, boolean nameDesc, boolean nullForEmpty) {
+        if (_item == null) {
+            return nullForEmpty ? null : "Empty " + slotType.name;
+        }
+        StringBuilder sb = new StringBuilder();
+        appendItemName(sb, suffix, nameDesc);
         return sb.toString();
     }
     

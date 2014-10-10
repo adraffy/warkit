@@ -1,7 +1,7 @@
 package com.antistupid.warkit.player;
 
 import java.util.function.Consumer;
-import com.antistupid.warbase.StatMap;
+import com.antistupid.warbase.stats.StatMap;
 import com.antistupid.warbase.types.EquipT;
 import com.antistupid.warbase.types.ProfT;
 import com.antistupid.warbase.types.RaceT;

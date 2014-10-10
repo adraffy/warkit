@@ -3,7 +3,7 @@ package com.antistupid.warkit.items;
 import java.util.ArrayList;
 import java.util.Arrays;
 import com.antistupid.warbase.structs.StatAlloc;
-import com.antistupid.warbase.StatMap;
+import com.antistupid.warbase.stats.StatMap;
 import com.antistupid.warbase.data.PlayerScaling;
 import com.antistupid.warbase.types.ProfT;
 

@@ -21,7 +21,7 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
             return true;
         } else if (a.suffixGroup != a.suffixGroup) {
             return false;
-        } else if (a.group == b.group) {
+        } else if (a.itemGroup == b.itemGroup) {
             return a.name.equals(b.name);
             // check faction swap
         } else {
@@ -42,7 +42,7 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
     public final RandomSuffixGroup suffixGroup;
     public final BonusGroup namedBonusGroup;
     public final BonusGroup auxBonusGroup;
-    public final Wearable[] group;
+    public final Wearable[] itemGroup;
     public final int groupIndex;
     public final ItemSet set;
     public final boolean extraSocket;
@@ -80,7 +80,7 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
         this.namedBonusGroup = namedGroup;
         this.auxBonusGroup = auxGroup;
         this.set = set;
-        this.group = group;
+        this.itemGroup = group;
         this.groupIndex = groupIndex;
         this.extraSocket = extraSocket;
         this.itemSpells = itemSpells;
@@ -120,9 +120,9 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
                 sb.append("AuxBonus").append(1 + i).append(": ").append(auxBonusGroup.universe[i]).append("\n");
             }
         }
-        if (group != null) {
-            for (int i = 0; i < group.length; i++) {
-                sb.append("Group").append(1 + i).append(": <").append(group[i].groupIndex).append(":").append(group[i].itemId).append("> ").append(group[i].nameDesc);
+        if (itemGroup != null) {
+            for (int i = 0; i < itemGroup.length; i++) {
+                sb.append("Group").append(1 + i).append(": <").append(itemGroup[i].groupIndex).append(":").append(itemGroup[i].itemId).append("> ").append(itemGroup[i].nameDesc);
                 if (i == groupIndex) {
                     sb.append(" <--");
                 }

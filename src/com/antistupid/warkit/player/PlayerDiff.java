@@ -3,7 +3,7 @@ package com.antistupid.warkit.player;
 import java.util.ArrayList;
 import java.util.Collection;
 import com.antistupid.warbase.structs.RandomSuffix;
-import com.antistupid.warbase.StatMap;
+import com.antistupid.warbase.stats.StatMap;
 import com.antistupid.warbase.utils.StringBuilderHelp;
 import com.antistupid.warbase.types.ClassT;
 import com.antistupid.warbase.types.RaceT;
@@ -172,16 +172,13 @@ public class PlayerDiff {
                 }     
                 if (slot1.isItemLevelCustom() || slot1.isItemLevelCustom()) {
                     if (slot1.getActualItemLevel() != slot2.getActualItemLevel()) {
-                        
+                        // this shit needs work
                     }
                 } else {
                     if (slot1.getUpgradeLevel() != slot2.getUpgradeLevel()) {
                         itemDiffs.add(diff(slot.name + "/Upgrade", formatUpgrade(slot1), formatUpgrade(slot2)));
                     }
                 }
-                
-                
-                
             } else {
                 itemDiffs.add(diff(slot.name, slot1, slot2));          
             }            
@@ -191,7 +188,7 @@ public class PlayerDiff {
                     // diff item, different suffix or scaling
                     powerDiffs.add(diff(s1.type.title, formatItemLevel(s1), formatItemLevel(s2)));
                 } else {
-                    itemDiffs.add(diff(s1.type.title, s1.getItemName(false), s2.getItemName(false)));                
+                    itemDiffs.add(diff(s1.type.title, s1.getItemBaseName(false), s2.getItemBaseName(false)));                
                 }            
             }
             */
@@ -203,8 +200,8 @@ public class PlayerDiff {
             
             
             for (int i = 0, e = Math.max(slot1.getSocketCount(), slot2.getSocketCount()); i < e; i++) {                       
-                PlayerSocket socket1 = slot1.getSocketAt(i);
-                PlayerSocket socket2 = slot2.getSocketAt(i);
+                PlayerSocket socket1 = slot1.getSocket(i);
+                PlayerSocket socket2 = slot2.getSocket(i);
                 if (socket1.getSocketColor() != socket1.getSocketColor()) {
                     socketDiffs.add(diff(String.format("%s/Socket#%d", slot.name, i + 1), socket1.getSocketColor(), socket1.getSocketColor()));
                 }                

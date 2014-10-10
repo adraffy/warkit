@@ -144,8 +144,8 @@ public class SimcProfile {
         CLASSES.add(ClassT.PRIEST);
         CLASSES.add(ClassT.ROGUE);
         CLASSES.add(ClassT.SHAMAN);
-        CLASSES.add(ClassT.WARLOCK);
-        CLASSES.add(ClassT.WARRIOR);
+        CLASSES.add(ClassT.LOCK);
+        CLASSES.add(ClassT.WAR);
     }
     
     static private final R<RaceT> RACES = new R<>();
@@ -443,7 +443,7 @@ public class SimcProfile {
                     Gem gem = gems[i];
                     if (gem != null) {
                         try {
-                            slot.getSocketAt(i).setGem(gem);
+                            slot.getSocket(i).setGem(gem);
                         } catch (PlayerError err) {
                             errors.add(new LineError(lineno, line0, err.getMessage()));
                         }
@@ -540,7 +540,7 @@ public class SimcProfile {
             }
             if (x.getGemCount() > 0) {
                 for (int i = 0; i < x.getSocketCount(); i++) {
-                    Gem gem = x.getSocketAt(i).getGem();
+                    Gem gem = x.getSocket(i).getGem();
                     if (i == 0) {
                         sb.append(",gem_id=");
                     } else {

@@ -414,7 +414,7 @@ public class CompactGear {
                 }
                 for (int i = 0; i < gemBuf.size(); i++) {
                     Gem gem = gemBuf.get(i);
-                    PlayerSocket socket = slot.getSocketAt(i);
+                    PlayerSocket socket = slot.getSocket(i);
                     if (socket == null) {
                         errors.add(new LineError(lineno, line0, String.format("No socket for gem[%d]: %s", i + 1, gem)));
                         continue;
@@ -464,7 +464,7 @@ public class CompactGear {
             if (num > 0) {
                 for (int i = 0; i < num; i++) {
                     sb.append(" :");
-                    PlayerSocket socket = slot.getSocketAt(i);
+                    PlayerSocket socket = slot.getSocket(i);
                     Gem gem = socket.getGem();
                     if (gem != null) {
                         sb.append(gem.itemId);

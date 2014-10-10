@@ -144,7 +144,7 @@ public class Armory {
         String prefix_char = "/character/";
         int global_pos = 0;
         while (true) {            
-            int index = html.indexOf(prefix_char, global_pos); // find an armory url
+            int index = html.indexOf(prefix_char, global_pos); // findPlayers an armory url
             if (index == -1) {
                 break;
             }
@@ -190,7 +190,7 @@ public class Armory {
         
     }
     
-    public ArrayList<ArmorySearchResult> find(String name, RegionT region, boolean force, int maxResults, Predicate<ArmorySearchResult> filter) {
+    public ArrayList<ArmorySearchResult> findPlayers(String name, RegionT region, boolean force, int maxResults, Predicate<ArmorySearchResult> filter) {
         String url0 = "http://" + region.host + "/wow/en/search?f=wowcharacter&sort=level&dir=d&q=" + urlEncode(name) + "&page=";
         int page = 0;
         int maxPages = 1;
@@ -414,7 +414,7 @@ public class Armory {
                     Gem gem = wk.gemMap.get(gemId);
                     if (gem != null) {
                         try {
-                            slot.getSocketAt(i).setGem(wk.gemMap.get(gemId));
+                            slot.getSocket(i).setGem(wk.gemMap.get(gemId));
                         } catch (PlayerError err) {
                             errors.accept(err.getMessage());
                         }
@@ -475,10 +475,18 @@ public class Armory {
     }
     
     
-    public void visit(String name, String realmSlug, RegionT region) {        
+    public void visitArmory(String name, String realmSlug, RegionT region) {        
         String url = "http://" + region.host + "/wow/character/" + _realmSlashName(name, realmSlug) + "/advanced";   
         if (!SystemHelp.openURL(url)) {
             throw new ArmoryError("Unable to visit Armory URL: " + url);
+        }
+    }
+    
+    public void visitWowProgress(String name, String realmSlug, RegionT region) {
+        //http://www.wowprogress.com/character/us/suramar/Edgy
+        String url = "http://www.wowprogress.com/character/" + region.name.toLowerCase() + "/" + _realmSlashName(name, realmSlug);   
+        if (!SystemHelp.openURL(url)) {
+            throw new ArmoryError("Unable to visit WoW Progress URL: " + url);
         }
     }
     

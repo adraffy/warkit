@@ -699,7 +699,7 @@ public class WarKit {
                             nameDesc = indexedString.read();
                             
                             
-                            /*if (nameDesc == null && group != null) {
+                            /*if (nameDesc == null && itemGroup != null) {
                                 nameDescId = 0;
                                 nameDesc = "Normal";
                             }                            
@@ -801,8 +801,8 @@ public class WarKit {
                 }
                 if (item instanceof Wearable) {
                     Wearable w = (Wearable)item;
-                    if (w.group != null) {
-                        w.group[w.groupIndex] = w; 
+                    if (w.itemGroup != null) {
+                        w.itemGroup[w.groupIndex] = w; 
                     }
                     wearableMap.put(itemId, w);                
                 } else if (item instanceof Gem) {
