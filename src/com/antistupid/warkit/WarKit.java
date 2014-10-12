@@ -98,7 +98,7 @@ public class WarKit {
             
         }
         WeaponT.db.forEach(allowedWeapons, x -> {                        
-            weaponEnchants[x.index].put(e.enchantment.id, e);
+            weaponEnchants[x.createFastLookup].put(e.enchantment.id, e);
         });*/
     }
     
@@ -181,7 +181,7 @@ public class WarKit {
 
         // internal
         //TreeMap<Integer,String> nameDescMap = new TreeMap<>();
-        TreeMap<Integer,String> fileNameMap = new TreeMap();
+        //TreeMap<Integer,String> fileNameMap = new TreeMap();
         TreeMap<Integer,Enchantment> enchantmentMap = new TreeMap<>();
         TreeMap<Integer,Unique> uniqueMap = new TreeMap<>();
         TreeMap<Integer,UpgradeChain> upgradeChainMap = new TreeMap<>();
@@ -205,7 +205,7 @@ public class WarKit {
             int upgradeCount = in.readInt();
             int uniqueCount = in.readInt();
             int enchantmentCount = in.readInt();
-            int fileNameCount = in.readInt(); 
+            //int fileNameCount = in.readInt(); 
             //int nameDescCount = in.readInt(); 
             int itemBonusCount = in.readInt();
             int namedGroupCount = in.readInt();
@@ -297,7 +297,7 @@ public class WarKit {
                 String desc = in.readUTF();                
                 enchantmentMap.put(id, new Enchantment(id, desc, minScalingLevel, maxScalingLevel, scalingId, scalingPerLevel, reqProf, reqProfSkill, statAllocs, profs, spells));
             }
-            for (int i = 0; i < fileNameCount; i++) {
+            /*for (int i = 0; i < fileNameCount; i++) {
                 int id = in.readInt();
                 String name = in.readUTF();                
                 int pos = name.indexOf('.');
@@ -306,7 +306,7 @@ public class WarKit {
                 }                
                 name = name.toLowerCase(); // convert to icon
                 fileNameMap.put(id, name);
-            }      
+            }*/   
             /*
             for (int i = 0; i < nameDescCount; i++) {
                 int id = in.readUnsignedShort();
@@ -516,6 +516,7 @@ public class WarKit {
                 int spellId = in.readInt();
                 String spellName = indexedString.read();
                 String spellDesc = indexedString.read();
+                String spellIcon = indexedString.read();
                 int maxItemLevel = in.readUnsignedShort();                
                 Enchantment enchantment = enchantmentMap.get(in.readUnsignedShort());
                 int flags = in.readUnsignedByte();
@@ -526,7 +527,7 @@ public class WarKit {
                 AbstractEnchant enchant;
                 if (isWeapon) {
                     long allowedWeapons = WeaponT.blizzBits.decode(mask2);
-                    WeaponEnchant e = new WeaponEnchant(spellId, spellName, spellDesc, maxItemLevel, isTinker, enchantment, allowedWeapons);
+                    WeaponEnchant e = new WeaponEnchant(spellId, spellName, spellDesc, spellIcon, maxItemLevel, isTinker, enchantment, allowedWeapons);
                     WeaponT.db.forEach(allowedWeapons, x -> {                        
                         WeaponEnchant old = weaponEnchants[x.index].put(e.enchantment.id, e);
                         if (old != null) {
@@ -537,7 +538,7 @@ public class WarKit {
                 } else {
                     long allowedEquip = EquipT.blizzBits.decode(mask1);
                     long allowedArmor = ArmorT.blizzBits.decode(mask2);
-                    ArmorEnchant e = new ArmorEnchant(spellId, spellName, spellDesc, maxItemLevel, isTinker, enchantment, allowedEquip, allowedArmor);                    
+                    ArmorEnchant e = new ArmorEnchant(spellId, spellName, spellDesc, spellIcon, maxItemLevel, isTinker, enchantment, allowedEquip, allowedArmor);                    
                     EquipT.db.forEach(allowedEquip, x -> {                        
                         ArmorEnchant old = armorEnchants[x.index].put(e.enchantment.id, e);
                         if (old != null) {
@@ -625,8 +626,7 @@ public class WarKit {
                 long reqRace = RaceT.blizzBits.decode(in.readInt());
                 long reqClass = ClassT.blizzBits.decode(in.readInt());                
                 
-                int fileNameId = in.readInt();
-                String fileName = fileNameMap.get(fileNameId);
+                String iconName = indexedString.read();
                 
                 int uniqueId = in.readShort();
                 Unique unique;
@@ -740,7 +740,7 @@ public class WarKit {
                             
                             item = new Weapon(
                                     itemId, itemLevel, type, quality, equip, 
-                                    bind, unique, name, text, fileName, 
+                                    bind, unique, name, text, iconName, 
                                     reqProf, reqProfLevel, reqRepId, reqRepRank,
                                     reqRace, reqClass,
                                     nameDesc, reqLevel, reqLevelMax, reqLevelCurveId, 
@@ -753,7 +753,7 @@ public class WarKit {
                             ArmorT type = ArmorT.db.by_id.require(subClass);
                             item = new Armor(
                                     itemId, itemLevel, type, quality, equip, 
-                                    bind, unique, name, text, fileName,                                    
+                                    bind, unique, name, text, iconName,                                    
                                     reqProf, reqProfLevel, reqRepId, reqRepRank,
                                     reqRace, reqClass, 
                                     nameDesc, reqLevel, reqLevelMax, reqLevelCurveId, 
@@ -788,7 +788,7 @@ public class WarKit {
                         GemT type = GemT.db.by_id.require(subClass);
                         item = new Gem(
                                 itemId, itemLevel, type, quality, equip, 
-                                bind, unique, name, text, fileName, 
+                                bind, unique, name, text, iconName, 
                                 reqProf, reqProfLevel, reqRepId, reqRepRank,
                                 reqRace, reqClass,
                                 gemCount++, reqItemLevel, scalingLevelMin, scalingLevelMax,

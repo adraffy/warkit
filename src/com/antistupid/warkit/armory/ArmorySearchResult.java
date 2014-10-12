@@ -2,6 +2,7 @@ package com.antistupid.warkit.armory;
 
 import com.antistupid.warbase.types.ClassT;
 import com.antistupid.warbase.types.RaceT;
+import java.util.Comparator;
 
 public class ArmorySearchResult {
 
@@ -25,5 +26,15 @@ public class ArmorySearchResult {
     public String toString() {
         return name + ":" + realmName + ":" + realmSlug + ":" + level + ":" + race + ":" + cls;
     }
+    
+    static public final Comparator<ArmorySearchResult> CMP_LEVEL_CLASS = (a, b) -> {
+        int c = Integer.compare(b.level, a.level);
+        return c == 0 ? Integer.compare(a.cls.index, b.cls.index) : c;
+    };
+    
+    static public final Comparator<ArmorySearchResult> CMP_CLASS_LEVEL = (a, b) -> {
+        int c = Integer.compare(a.cls.index, b.cls.index);
+        return c == 0 ? Integer.compare(b.level, a.level) : c;
+    };
     
 }

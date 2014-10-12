@@ -558,6 +558,11 @@ public class SimcProfile {
                 sb.append(",upgrade=");
                 sb.append(up);
             }
+            AbstractEnchant ench = x.getEnchant();
+            if (ench != null) {
+                sb.append(",enchant_id");
+                sb.append(ench.enchantment.id);
+            }
         }        
         return sb.toString();
     }

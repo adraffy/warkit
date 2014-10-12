@@ -66,7 +66,7 @@ public class PlayerDiff {
         } else if (obj instanceof PlayerSocket) {
             return ((PlayerSocket)obj).getGemName(false);
         } else if (obj instanceof StatMap) {
-            return ((StatMap)obj).getDesc(false);
+            return ((StatMap)obj).toString_noBracket(true); // this has brackets :|
         } else if (obj instanceof RandomSuffix) {
             return ((RandomSuffix)obj).name;
         } else if (obj instanceof AbstractEnchant) {

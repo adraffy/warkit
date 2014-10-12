@@ -75,14 +75,15 @@ public class Enchantment {
     }
     
     public void renderDesc(StringBuilder sb, int playerLevel, StatMap stats) {
+        int num = 0;
         if (statAllocs != null) {           
             stats.clear(); 
             collectStats(stats, playerLevel);
-            stats.appendTo(sb, false);
+            num += stats.appendTo(sb, false, false);
         }
         if (profBoosts != null) {
             for (int i = 0; i < profBoosts.length; i++) {
-                if (i > 0) {
+                if (num++ > 0) {
                     sb.append(", ");
                 }
                 ProfValue x = profBoosts[i];
@@ -91,8 +92,7 @@ public class Enchantment {
                 sb.append(" ");
                 sb.append(x.prof.name);
             }
-        }
-        
+        }        
     }
     
     /*

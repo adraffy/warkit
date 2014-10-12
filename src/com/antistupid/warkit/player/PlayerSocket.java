@@ -14,8 +14,7 @@ public class PlayerSocket {
     public final int index;
     
     SocketT _socket;
-    Gem _gem;
-    
+    Gem _gem;    
     final StatMap _stats = new StatMap();
     
     PlayerSocket(PlayerSlot slot, int index) {
@@ -37,7 +36,14 @@ public class PlayerSocket {
             if (_gem == null) {
                 sb.append("Empty");                
             } else {
-                _stats.appendTo(sb, false);
+                sb.append("[");
+                _stats.appendTo(sb, true, false);
+                sb.append("]");
+                if (_gem.spellId != 0) {
+                    sb.append(" (Spell:");
+                    sb.append(_gem.spellId);
+                    sb.append(")");
+                }
             }            
         }    
         return sb.toString();
@@ -128,11 +134,11 @@ public class PlayerSocket {
         slot.updateSocketBonus();
     }
     
-    public void appendTo(StringBuilder sb) {
+    public void appendGemStatsTo(StringBuilder sb, boolean tiny) {
         if (_gem == null) {
             return;
         }
-        _stats.appendTo(sb, false);  
+        _stats.appendTo(sb, tiny, false);  
     }
     
 }

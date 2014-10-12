@@ -15,7 +15,7 @@ import com.antistupid.warkit.items.Wearable;
 
 public class Player {
 
-    static public final int MAX_PROF = 2;
+    static public final int MAX_PROFS = 2;
     static public final int MAX_SOCKETS = 6;
 
     static public final int MAX_PLAYER_LEVEL = 100;
@@ -27,6 +27,7 @@ public class Player {
     public RaceT race;
     
     public String playerName;
+    public boolean playerMale;
     public RegionT region;
     public String realmName;
     public String realmSlug;
@@ -52,7 +53,7 @@ public class Player {
     */
     boolean _bothHandsForMH;
     
-    public final PlayerProf[] PROF = new PlayerProf[MAX_PROF];
+    public final PlayerProf[] PROF = new PlayerProf[MAX_PROFS];
     long _profBits;
     
     public final PlayerSlot[] SLOT;
@@ -160,6 +161,8 @@ public class Player {
     public void copySetup(Player p) {
         spec = p.spec;
         race = p.race;
+        playerName = p.playerName;
+        playerMale = p.playerMale;
         playerLevel = p.playerLevel;
         pvpMode = p.pvpMode;
         asiaMode = p.asiaMode;
@@ -216,23 +219,32 @@ public class Player {
         PROF[index].clear();           
         return true;
     }
-    
+    public boolean hasProf(ProfT prof) {
+        return findProf(prof) >= 0;
+    }
     public int findProf(ProfT prof) {
         for (int i = 0; i < PROF.length; i++) {
-            if (PROF[i].prof == prof) {
+            if (PROF[i]._prof == prof) {
                 return i;
             }
         }        
         return -1;
     }
+    public PlayerProf getProf(int index) { // save accessor
+        if (index < 0 || index >= PROF.length) {
+            throw new PlayerError("Invalid profession index: " + index);
+        } 
+        return PROF[index];
+    }
     
+    /*
     public void setProf(int index, ProfT prof, int level) {
         if (index < 0 || index >= PROF.length) {
             throw new PlayerError("Invalid profession index: " + index);
         } 
         PROF[index].setProf(prof);
         PROF[index].setLevel(level);
-    }
+    }*/
   
     public void collectStats(StatMap stats) {
         for (PlayerSlot x: SLOT) {

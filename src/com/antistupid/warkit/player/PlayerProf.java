@@ -6,65 +6,78 @@ public class PlayerProf {
 
     public final int index;
     public final Player owner;
+    // should we add support for secondary profs?
     
     PlayerProf(Player owner, int index) {
         this.owner = owner;
         this.index = index;
     }     
     
-    ProfT prof;
-    int level;
+    // i dont want these accessed directly
+    ProfT _prof;
+    int _level;
     
     public boolean hasProf() {
-        return prof != null;
+        return _prof != null;
     }
     
     public ProfT getProf() {
-        return prof;
+        return _prof;
     }
     
     public int getLevel() {
-        return level;
+        return _level;
     }
     
-    public void setProf(ProfT newProf) {
-        if (prof == newProf) {
+    public void setProf(ProfT p) { setProf(p, 0); }
+    public void setProf(ProfT p, int level) {
+        if (_prof == p) {
             return;
+        } else if (p == null) {
+            clear();
+            return;
+        } else if (!p.primary) {
+            throw new PlayerError(p + " is not a primary profession");
         }
-        if (ProfT.checkBit(owner._profBits, newProf)) {
-            throw new PlayerError(newProf + " is already active");
+        if (ProfT.checkBit(owner._profBits, p)) {
+            throw new PlayerError(p + " is already active");
         }
+        level = checkLevel(p, level); // do this first so we can throw    
         clear();
-        prof = newProf;
-        level = 1;
-        owner._profBits |= newProf.getBit();
+        _prof = p;
+        _level = level;
+        owner._profBits |= p.getBit();
+    }
+    
+    static int checkLevel(ProfT prof, int level) {
+        if (level == 0) {
+            return Player.MAX_PROF_LEVEL;
+        } else if (level < 1 || level > Player.MAX_PROF_LEVEL) {
+            throw new PlayerError(String.format("%s (%d) is not valid [1,%d]", prof, level, Player.MAX_PROF_LEVEL));
+        } else {
+            return level;
+        }
     }
     
     public void setLevel(int newLevel) {
-        if (prof == null) {
-            throw new PlayerError("Empty professions cannot have a skill level.");
+        if (_prof == null) {
+            throw new PlayerError("Empty professions cannot have a skill level");
         }
-        if (newLevel == 0) {
-            newLevel = Player.MAX_PROF_LEVEL;
-        } else if (newLevel < 1 || newLevel > Player.MAX_PROF_LEVEL) {
-            throw new PlayerError(String.format("%s (%d) is not valid [1,%d]", prof, newLevel, Player.MAX_PROF_LEVEL));
-        }
-        level = newLevel;            
+        _level = checkLevel(_prof, newLevel);            
     }     
     
     public void clear() {
-        if (prof != null) {
-            owner._profBits &= ~prof.getBit();
-            prof = null; 
+        if (_prof != null) {
+            owner._profBits &= ~_prof.getBit();
+            _prof = null; 
         }
     }
     
     public void copy(PlayerProf other) {
-        if (other.prof == null) {
+        if (other._prof == null) {
             clear();
         } else {
-            setProf(other.prof);  
-            setLevel(other.level);
+            setProf(other._prof, other._level);
         }
     }
 }

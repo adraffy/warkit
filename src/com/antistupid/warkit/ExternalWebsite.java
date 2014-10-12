@@ -34,23 +34,34 @@ abstract public class ExternalWebsite {
         return SystemHelp.openURL(url);        
     }
     
-    static public final ExternalWebsite WH = new ExternalWebsite("Wowhead", "http://wod.wowhead.com/") {
-
+    static public final ExternalWebsite WOWHEAD = new ExternalWebsite("Wowhead", "http://wod.wowhead.com/") {
         @Override
         public String getItemURL(int id) {
             return baseURL + "item=" + id;
         }
-
         @Override
         public String getSpellURL(int id) {
             return baseURL + "spell=" + id;
-        }
-        
+        }        
         @Override
         public String getItemSetURL(int id) {
             return baseURL + "itemset=" + id;
+        }        
+    };
+    
+    static public final ExternalWebsite WOWDB = new ExternalWebsite("WowDB", "http://beta.wowdb.com/") {
+        @Override
+        public String getItemURL(int id) {
+            return baseURL + "items/" + id;
         }
-        
+        @Override
+        public String getSpellURL(int id) {
+            return baseURL + "spells/" + id;
+        }        
+        @Override
+        public String getItemSetURL(int id) {
+            return baseURL + "itemsets/" + id;
+        }        
     };
     
     

@@ -52,11 +52,11 @@ public class CompactGear {
                 return false;
             }   
         }
-        if (profIndex >= Player.MAX_PROF) {
+        if (profIndex >= Player.MAX_PROFS) {
             errorHandler.accept("Too many professions: " + comp);
         }
         try {
-            p.setProf(profIndex, prof, level);
+            p.getProf(profIndex).setProf(prof, level);
             return true;
         } catch (PlayerError err) {
             errorHandler.accept(err.getMessage());

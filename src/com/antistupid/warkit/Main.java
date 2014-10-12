@@ -40,7 +40,7 @@ public class Main {
         }
         
         if (true) { 
-            Player p = a.getPlayer("Edgy", "Suramar", RegionT.US, false, System.out::println);
+            Player p = a.getPlayer("Edgy", "Suramar", RegionT.US, 0, false, System.out::println);
             p.WAIST.dump();
             return;
         }

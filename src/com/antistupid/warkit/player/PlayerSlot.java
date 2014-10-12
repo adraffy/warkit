@@ -222,7 +222,7 @@ public class PlayerSlot {
     }
     
     boolean isTitanGrippable(Weapon w) {
-        return owner.spec == SpecT.FURY && owner.playerLevel >= 38 && w.type.memberOf(WeaponT.TITANS_GRIP);
+        return owner.spec == SpecT.FURY && owner.playerLevel >= 38 && w.type.isMemberOf(WeaponT.TITANS_GRIP);
     }
     
     void checkWearable(Wearable item) {
@@ -233,10 +233,10 @@ public class PlayerSlot {
     }
     
     void checkItem(Item item, int ignoreGemIndex) {        
-        if (owner.spec != null && !owner.spec.classType.memberOf_passZero(item.reqClass)) {    
+        if (owner.spec != null && !owner.spec.classType.isMemberOf_passZero(item.reqClass)) {    
             throw new PlayerError.EquipSlot(this, item, String.format("Cannot be used by %s", owner.spec.classType.name));
         }            
-        if (owner.race != null && !owner.race.memberOf_passZero(item.reqRace)) {
+        if (owner.race != null && !owner.race.isMemberOf_passZero(item.reqRace)) {
             throw new PlayerError.EquipSlot(this, item, String.format("Cannot be used by %s", owner.race.name));
         }            
         if (item.reqProf != null) {
@@ -244,7 +244,7 @@ public class PlayerSlot {
             if (index == -1) {
                 throw new PlayerError.EquipSlot(this, item, String.format("%s requires %s", item.name, item.reqProf));
             }
-            if (owner.PROF[index].level < item.reqProfLevel) {
+            if (owner.PROF[index]._level < item.reqProfLevel) {
                 throw new PlayerError.EquipSlot(this, item, String.format("%s requires %s (%d)", item.name, item.reqProf, item.reqProfLevel));
             }            
         }  
@@ -610,7 +610,7 @@ public class PlayerSlot {
         Enchantment bonus = _item.socketBonus;
         if (bonus != null) {
             // _socket namedBonuses are only stats
-            // never prof requirement
+            // never _prof requirement
             _socketBonusSatisfied = true;
             for (int i = 0; i < _socketCount; i++) {
                 if (!_socket[i].matches(true)) {

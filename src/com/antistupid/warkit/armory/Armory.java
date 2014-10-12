@@ -286,14 +286,17 @@ public class Armory {
         }
     }
     
-        
+    static public final int TALENT_SPEC_SELECTED = 0;
+    static public final int TALENT_SPEC_1 = 1;
+    static public final int TALENT_SPEC_2 = 2;
+    
     static final String SPEC_CHARS = "aZbY";
     
     private String _realmSlashName(String name, String realmSlug) {        
         return urlEncode(realmSlug.toLowerCase().replaceAll("\\s+", "-")) +  "/" + urlEncode(name.trim());
     }
     
-    public Player getPlayer(String name, String realmSlug, RegionT region, boolean force, Consumer<String> errors) { 
+    public Player getPlayer(String name, String realmSlug, RegionT region, int talentIndex, boolean force, Consumer<String> errors) { 
         String base = "http://" + region.host + "/api/wow/character/" + _realmSlashName(name, realmSlug);
         String url = base + "?fields=items,talents,professions&locale=en|dir=Character|name=#.json";    
         JSONObject root;
@@ -316,6 +319,7 @@ public class Armory {
         Player p = new Player();
         try {
             p.playerName = JSONHelp.requireStr(localized, "name");            
+            p.playerMale = JSONHelp.requireInt(root, "gender") == 0;
             p.realmName = JSONHelp.requireStr(localized, "realm");
             p.playerLevel = JSONHelp.requireNum(root, "level").intValue();
             p.realmSlug = realmSlug; // this must be valid since it worked
@@ -328,22 +332,32 @@ public class Armory {
             ClassT cls = ClassT.db.by_id.require(JSONHelp.requireNum(root, "class").intValue());
             RaceT race = RaceT.db.by_id.require(JSONHelp.requireNum(root, "race").intValue());
             JSONArray talents = JSONHelp.require(root, "talents", JSONArray.class);     
-            int specIndex = -1;
-            for (Object x: talents) {
-                JSONObject talentsInfo = (JSONObject)x;                                             
-                if (talentsInfo.containsKey("selected")) {
-                    //p.talents = (String)talentsInfo.get("calcTalent");
-                    //p.glyphs = (String)talentsInfo.get("calcGlyph");
-                    specIndex = SPEC_CHARS.indexOf(JSONHelp.requireStr(talentsInfo, "calcSpec"));
-                    break;
+            
+            JSONObject talentInfo = null;
+            if (talentIndex == TALENT_SPEC_SELECTED) {
+                talentInfo = (JSONObject)talents.get(0); // default to first
+                for (Object x: talents) {
+                    JSONObject info = (JSONObject)x;                     
+                    if (info.containsKey("selected")) {
+                        talentInfo = info;
+                        break;
+                    }
                 }
-            }
+            } else if (talentIndex < 1 || talentIndex > talents.size()) {
+                throw new ArmoryError("Invalid Talent Index: " + talentIndex);
+            } else {
+                talentInfo = (JSONObject)talents.get(talentIndex - 1);
+            }           
+            int specIndex = SPEC_CHARS.indexOf(JSONHelp.requireStr(talentInfo, "calcSpec"));
+            //p.talents = (String)talentsInfo.get("calcTalent");
+            //p.glyphs = (String)talentsInfo.get("calcGlyph");
             if (specIndex < 0 || specIndex >= cls.specs.size()) {
-                throw new ArmoryError("No Selected Spec");
+                //throw new ArmoryError("No Specialization Active");
+                specIndex = 0; // default to first
             }
             p.spec = cls.specs.get(specIndex);
             if (!p.spec.classType.canBe(race)) {
-                throw new ArmoryError("Bullshit Race");
+                throw new ArmoryError("Bullshit Race"); // wont happen
             }
             p.race = race;
                         
@@ -355,7 +369,7 @@ public class Armory {
                 JSONObject profInfo = (JSONObject)x;                
                 ProfT prof = ProfT.db.by_id.require(JSONHelp.requireInt(profInfo, "id"));                 
                 int level = JSONHelp.requireInt(profInfo, "rank");    
-                p.setProf(profIndex++, prof, level);                    
+                p.getProf(profIndex++).setProf(prof, level);                    
             }
             
             JSONObject items = (JSONObject)root.get("items");       
