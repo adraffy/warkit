@@ -278,8 +278,8 @@ public class Player {
     */
     
     
-    public void validate() { validate(null); }
-    public void validate(Player buf) {
+    public void validate() { validate(null, null); }
+    public void validate(Player buf, Consumer<PlayerError> errors) {
         if (buf == null || buf == this) {
             buf = new Player();
         }
@@ -288,7 +288,7 @@ public class Player {
         buf.spec = spec;
         buf.race = race;
         buf.copy(this, null); // export
-        copySlots(buf, null); // copy it back        
+        copySlots(buf, errors); // copy it back        
         // aww yiss
     }
     

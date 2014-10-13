@@ -4,8 +4,9 @@ public class WeaponEnchant extends AbstractEnchant {
 
     public final long allowedWeapons;
     
-    public WeaponEnchant(int spellId, String spellName, String spellDesc, String spellIcon, int maxItemLevel, boolean isTinker, Enchantment enchantment, long allowedWeapons) {
-        super(spellId, spellName, spellDesc, spellIcon, maxItemLevel, isTinker, enchantment);
+    public WeaponEnchant(int spellId, int itemId, String name, String spellDesc, String icon, int maxItemLevel, 
+            boolean isTinker, boolean isRetired, Enchantment enchantment, long allowedWeapons) {
+        super(spellId, itemId, name, spellDesc, icon, maxItemLevel, isTinker, isRetired, enchantment);
         this.allowedWeapons = allowedWeapons;
     }
 

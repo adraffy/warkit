@@ -9,6 +9,7 @@ import com.antistupid.warbase.data.PlayerScaling;
 import com.antistupid.warbase.types.EquipT;
 import com.antistupid.warbase.types.SpecT;
 import com.antistupid.warbase.types.ProfT;
+import com.antistupid.warbase.types.QualityT;
 import com.antistupid.warbase.types.RaceT;
 import com.antistupid.warbase.types.RegionT;
 import com.antistupid.warkit.armory.Armory;
@@ -34,12 +35,19 @@ public class Main {
             return;
         }
         
-        if (true) {
-            wk.wearableMap.get(106604).dump();
+        if (false) {
+            wk.wearableMap.values().stream().filter(x -> (x.itemLevel == 397 || x.itemLevel == 378) && x.quality == QualityT.PURPLE && x.nameDesc == null).forEach(x -> System.out.println(x.itemId + " # " + x.name + " (" + x.nameDesc + ")"));            
+            //wk.wearableMap.get(106604).dump();
             return;
         }
         
-        if (true) { 
+        if (true) {
+            a.findPlayers("Edgy", RegionT.US, false, 0, null);
+            return;
+        }
+        
+        
+        if (false) { 
             Player p = a.getPlayer("Edgy", "Suramar", RegionT.US, 0, false, System.out::println);
             p.WAIST.dump();
             return;

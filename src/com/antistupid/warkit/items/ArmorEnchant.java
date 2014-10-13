@@ -5,8 +5,9 @@ public class ArmorEnchant extends AbstractEnchant {
     public final long allowedEquip;
     public final long allowedArmor;
     
-    public ArmorEnchant(int spellId, String spellName, String spellDesc, String spellIcon, int maxItemLevel, boolean isTinker, Enchantment enchantment, long allowedEquip, long allowedArmor) {
-        super(spellId, spellName, spellDesc, spellIcon, maxItemLevel, isTinker, enchantment);
+    public ArmorEnchant(int spellId, int itemId, String name, String spellDesc, String icon, int maxItemLevel, 
+            boolean isTinker, boolean isRetired, Enchantment enchantment, long allowedEquip, long allowedArmor) {
+        super(spellId, itemId, name, spellDesc, icon, maxItemLevel, isTinker, isRetired, enchantment);
         this.allowedEquip = allowedEquip;
         this.allowedArmor = allowedArmor;
     }

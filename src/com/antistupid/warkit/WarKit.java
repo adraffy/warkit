@@ -102,13 +102,19 @@ public class WarKit {
         });*/
     }
     
-    public AbstractEnchant findEnchant(Item item, int enchantId) {
+    static final SortedMap<Integer,? extends AbstractEnchant> emptyEnchantMap = Collections.unmodifiableSortedMap(new TreeMap<>());    
+    public SortedMap<Integer,? extends AbstractEnchant> getEnchantUniverse(Item item) {
         if (item instanceof Armor) {
-            return armorEnchants[item.equip.index].get(enchantId);
+            return armorEnchants[item.equip.index];
         } else if (item instanceof Weapon) {
-            return weaponEnchants[item.type.index].get(enchantId);
-        } 
-        return null;                
+            return weaponEnchants[item.type.index];
+        } else {
+            return emptyEnchantMap;
+        }
+    }
+    
+    public AbstractEnchant findEnchant(Item item, int enchantId) {
+        return getEnchantUniverse(item).get(enchantId);
     }
     
     public IntSet repairItemBonuses(Wearable item, IntSet bonuses) {
@@ -172,6 +178,7 @@ public class WarKit {
     
     //static public WarKit load() { return load(Paths.get("WKDB.dat")); }
     static public WarKit load(Path file) {
+        //final long startTime = System.currentTimeMillis();
 
         // expose
         TreeMap<Integer,Wearable> wearableMap = new TreeMap<>();  
@@ -514,35 +521,37 @@ public class WarKit {
             
             for (int index = 0; index < enchantCount; index++) {
                 int spellId = in.readInt();
-                String spellName = indexedString.read();
+                int itemId = in.readInt();
+                String name = indexedString.read();
                 String spellDesc = indexedString.read();
-                String spellIcon = indexedString.read();
+                String icon = indexedString.read();
                 int maxItemLevel = in.readUnsignedShort();                
                 Enchantment enchantment = enchantmentMap.get(in.readUnsignedShort());
                 int flags = in.readUnsignedByte();
                 boolean isWeapon = (flags & 0x01) != 0;
                 boolean isTinker = (flags & 0x02) != 0; //? 1 : 0; // tinker or not
+                boolean isRetired = (flags & 0x04) != 0; //? 1 : 0; // tinker or not
                 int mask1 = in.readInt();
                 int mask2 = in.readInt();                
                 AbstractEnchant enchant;
                 if (isWeapon) {
                     long allowedWeapons = WeaponT.blizzBits.decode(mask2);
-                    WeaponEnchant e = new WeaponEnchant(spellId, spellName, spellDesc, spellIcon, maxItemLevel, isTinker, enchantment, allowedWeapons);
+                    WeaponEnchant e = new WeaponEnchant(spellId, itemId, name, spellDesc, icon, maxItemLevel, isTinker, isRetired, enchantment, allowedWeapons);
                     WeaponT.db.forEach(allowedWeapons, x -> {                        
                         WeaponEnchant old = weaponEnchants[x.index].put(e.enchantment.id, e);
                         if (old != null) {
-                            System.out.println("EnchantCollision: " + x.name + ": " + e.spellId + ":" + e.spellName + " :: " + old.spellId + ":" + old.spellName);
+                            System.out.println("EnchantCollision: " + x.name + ": " + e.spellId + ":" + e.name + " :: " + old.spellId + ":" + old.name);
                         }
                     });
                     enchant = e;
                 } else {
                     long allowedEquip = EquipT.blizzBits.decode(mask1);
                     long allowedArmor = ArmorT.blizzBits.decode(mask2);
-                    ArmorEnchant e = new ArmorEnchant(spellId, spellName, spellDesc, spellIcon, maxItemLevel, isTinker, enchantment, allowedEquip, allowedArmor);                    
+                    ArmorEnchant e = new ArmorEnchant(spellId, itemId, name, spellDesc, icon, maxItemLevel, isTinker, isRetired, enchantment, allowedEquip, allowedArmor);                    
                     EquipT.db.forEach(allowedEquip, x -> {                        
                         ArmorEnchant old = armorEnchants[x.index].put(e.enchantment.id, e);
                         if (old != null) {
-                            System.out.println("EnchantCollision: " + e.spellId + ":" + e.spellName + " :: " + old.spellId + ":" + old.spellName);
+                            System.out.println("EnchantCollision: " + e.spellId + ":" + e.name + " :: " + old.spellId + ":" + old.name);
                         }
                     });                    
                     enchant = e;
@@ -913,7 +922,7 @@ public class WarKit {
             sep = " / ";
         }        
         String name = names.stream().collect(Collectors.joining(sep));
-        Arrays.sort(v, ItemBonus.CMP_ID);
+        Arrays.sort(v, ItemBonus.CMP_ID);        
         return new NamedItemBonus(v, name, itemLevelDelta, reqLevelDelta, qualityMax);              
     }
     

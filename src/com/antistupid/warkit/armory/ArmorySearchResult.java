@@ -12,19 +12,21 @@ public class ArmorySearchResult {
     public int level;
     public RaceT race;
     public ClassT cls;
+    public String guild; // null for no guild
     
-    ArmorySearchResult(String name, String realm, String realmSlug, int level, RaceT race, ClassT cls) {
+    ArmorySearchResult(String name, String realmName, String realmSlug, int level, RaceT race, ClassT cls, String guild) {
         this.name = name;
-        this.realmName = realm;
+        this.realmName = realmName;
         this.realmSlug = realmSlug;
         this.level = level;
         this.race = race;
         this.cls = cls;
+        this.guild = guild;
     }
     
     @Override
-    public String toString() {
-        return name + ":" + realmName + ":" + realmSlug + ":" + level + ":" + race + ":" + cls;
+    public String toString() { // fix me
+        return name + ":" + realmName + ":" + realmSlug + ":" + level + ":" + race + ":" + cls + ":" + guild;
     }
     
     static public final Comparator<ArmorySearchResult> CMP_LEVEL_CLASS = (a, b) -> {

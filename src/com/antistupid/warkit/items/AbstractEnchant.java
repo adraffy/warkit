@@ -1,24 +1,26 @@
 package com.antistupid.warkit.items;
 
-import com.antistupid.warbase.stats.StatMap;
-
 abstract public class AbstractEnchant {
 
     public final int spellId;
-    public final String spellName;
+    public final int itemId;
+    public final String name;
     public final String spellDesc;
-    public final String spellIcon;
+    public final String icon;
     public final int maxItemLevel;
     public final boolean isTinker;
+    public final boolean isRetired;
     public final Enchantment enchantment;
     
-    AbstractEnchant(int spellId, String spellName, String spellDesc, String spellIcon, int maxItemLevel, boolean isTinker, Enchantment enchantment) {
-        this.spellName = spellName;
-        this.spellDesc = spellDesc;
-        this.spellIcon = spellIcon;
+    AbstractEnchant(int spellId, int itemId, String name, String spellDesc, String icon, int maxItemLevel, boolean isTinker, boolean isRetired, Enchantment enchantment) {
         this.spellId = spellId;
+        this.itemId = itemId;
+        this.name = name;
+        this.spellDesc = spellDesc;
+        this.icon = icon;
         this.maxItemLevel = maxItemLevel;
         this.isTinker = isTinker;
+        this.isRetired = isRetired;
         this.enchantment = enchantment;        
     }
     
@@ -30,7 +32,7 @@ abstract public class AbstractEnchant {
     
     @Override
     public String toString() {
-        return String.format("%s<%s>(%s)", getClass().getSimpleName(), spellId, spellName);
+        return String.format("%s<%s>(%s)", getClass().getSimpleName(), spellId, name);
     }
     
     

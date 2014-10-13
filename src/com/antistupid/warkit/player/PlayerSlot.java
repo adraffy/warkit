@@ -144,6 +144,8 @@ public class PlayerSlot {
             return;
         }
         // fix me: remember more stuff
+        Wearable oldItem = _item;
+        int upgradeIndex = _upgradeIndex;
         AbstractEnchant enchant = _enchant;
         boolean extraSocket = _extraSocket;
         Gem[] gems = copyGems();
@@ -154,14 +156,16 @@ public class PlayerSlot {
         } catch (PlayerError err) {
             // ignore
         }
+        if (oldItem.upgrade == _item.upgrade) {
+            setUpgradeLevel(upgradeIndex);
+        }        
         for (int i = 0; i < _socketCount; i++) {
             try {
                 _socket[i].setGem(gems[i]);
             } catch (PlayerError err) {
                 // ignore
             }
-        }
-        
+        }        
     }
     public void setItem(Item item) {
         if (item == null) {            
@@ -477,6 +481,8 @@ public class PlayerSlot {
     public AbstractEnchant getEnchant() {
         return _enchant;
     }
+    //public boolean canEnchant(AbstractEnchant enchant)
+    
     public void setEnchant(AbstractEnchant enchant) {
         if (enchant == null) {
             _enchant = null;
@@ -487,9 +493,9 @@ public class PlayerSlot {
         }
         int ilvl = getBaseItemLevel();
         if (!enchant.checkItemLevel(ilvl)) {
-            throw new PlayerError.EquipSlot(this, _item, String.format("%s cannot be applied to items higher than level %d", enchant.spellName, enchant.maxItemLevel));
+            throw new PlayerError.EquipSlot(this, _item, String.format("%s cannot be applied to items higher than level %d", enchant.name, enchant.maxItemLevel));
         } else if (!enchant.canApply(_item)) {
-            throw new PlayerError.EquipSlot(this, _item, String.format("%s cannot be applied", enchant.spellName));
+            throw new PlayerError.EquipSlot(this, _item, String.format("%s cannot be applied", enchant.name));
         }
         _enchant = enchant;        
     }
@@ -705,7 +711,9 @@ public class PlayerSlot {
         return _namedBonusIndex == other._namedBonusIndex 
             && _suffixIndex == other._suffixIndex;
     }
-
+    public void copy(Player other, Consumer<PlayerError> errors) {
+        copy(other.SLOT[slotType.index], errors);
+    }
     public void copy(PlayerSlot other, Consumer<PlayerError> errors) {
         setItem(other._item);
         if (_item == null) return;

@@ -70,7 +70,7 @@ public class PlayerDiff {
         } else if (obj instanceof RandomSuffix) {
             return ((RandomSuffix)obj).name;
         } else if (obj instanceof AbstractEnchant) {
-            return ((AbstractEnchant)obj).spellName;
+            return ((AbstractEnchant)obj).name;
         } else if (obj instanceof SpecT) {
             return ((SpecT)obj).fullName;
         } else if (obj instanceof RaceT) {

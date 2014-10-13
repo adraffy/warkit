@@ -62,6 +62,18 @@ public class Armory {
         return temp.substring(pos, end).trim();
     }
     
+    static private String parseGuildName(String temp) {
+        int end = temp.indexOf("</a>");
+        if (end == -1) {
+            return null;
+        }
+        int pos = temp.lastIndexOf('>', end);
+        if (pos == -1) {
+            return null;
+        }
+        return temp.substring(pos + 1, end);        
+    }
+    
     static private String parseRealmName(String temp) {
         int pos = temp.indexOf('>');
         if (pos == -1) {
@@ -179,13 +191,14 @@ public class Armory {
             if (cls == null) {
                 continue;
             }
-            //comp[5]; guild
+            // comp[4] = faction
+            String guildName = parseGuildName(comp[5]); // can be null
             String realmName = parseRealmName(comp[6]);
             if (realmName == null) {
                 continue;
             }
             String realmSlug = html.substring(index, html.indexOf('/', index));
-            c.accept(new ArmorySearchResult(name, realmName, realmSlug, level, race, cls));            
+            c.accept(new ArmorySearchResult(name, realmName, realmSlug, level, race, cls, guildName));            
         }
         
     }
@@ -208,7 +221,7 @@ public class Armory {
                 maxPages = parseMaxPages(html);
             }
             extract(html, x -> {
-                if (filter.test(x)) {
+                if (filter == null || filter.test(x)) {
                     matches.add(x);
                     //System.out.println(x);
                 }                
@@ -301,7 +314,7 @@ public class Armory {
         String url = base + "?fields=items,talents,professions&locale=en|dir=Character|name=#.json";    
         JSONObject root;
         try {
-            root = json(hc.fetchData(url, force ? -1 : 30000, true));  
+            root = json(hc.fetchData(url, force ? -1 : 60000, true));  
         } catch (RuntimeException err) {
             throw new ArmoryError("Fetch Player Failed: " + err.getMessage());
         }
@@ -325,7 +338,7 @@ public class Armory {
             p.realmSlug = realmSlug; // this must be valid since it worked
             p.region = region; // same
         } catch (RuntimeException err) {
-            throw new ArmoryError("Parse Player Failed (Header)");
+            throw new ArmoryError("Parse Player Failed (Header)" + err);
         }
         // identity is defined
         try {

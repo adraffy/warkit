@@ -13,6 +13,7 @@ import com.antistupid.warbase.utils.Commented;
 import com.antistupid.warbase.IntSet;
 import com.antistupid.warbase.utils.LineError;
 import com.antistupid.warbase.types.ClassT;
+import com.antistupid.warbase.types.ProfT;
 import com.antistupid.warbase.types.RaceT;
 import com.antistupid.warbase.types.SlotT;
 import com.antistupid.warbase.types.SpecT;
@@ -282,11 +283,40 @@ public class SimcProfile {
                     case "role":    
                     case "position":
                     case "glyphs":
-                    case "talents": 
-                    case "professions": {                        
+                    case "talents":
+                        continue;
+                    case "professions": {    
+                        //engineering=600/enchanting=600
+                        int profIndex = 0;
+                        p.clearProfs(); // unneeded
+                        for (String comp: rest.split("/")) {
+                            pos = comp.indexOf('=');
+                            String left = comp.substring(0, pos).trim();
+                            String right = comp.substring(pos + 1).trim();                            
+                            ProfT prof = ProfT.names.resolve(left, xx -> xx.primary);
+                            if (prof == null) {
+                                errors.add(new LineError(lineno, line0, String.format("Unknown Profession: \"%s\"", left)));
+                                continue;
+                            }
+                            int level;
+                            try {
+                                level = Integer.parseInt(right);
+                            } catch (NumberFormatException err) {
+                                errors.add(new LineError(lineno, line0, String.format("Illegal Profession Level: \"%s\"", comp)));
+                                continue;                                
+                            }
+                            try {
+                                p.getProf(profIndex++).setProf(prof, level);
+                            } catch (PlayerError err) {
+                                errors.add(new LineError(lineno, line0, err.getMessage()));
+                            }                             
+                        }
                         continue;
                     }
                 }
+                if (key.startsWith("action")) {
+                    continue;
+                }                
                 if (SLOTS.get(key) == null && !ignoreSlot(key)) {                    
                     errors.add(new LineError(lineno, line0, "Unknown option: "  + key));
                     continue;
@@ -294,11 +324,7 @@ public class SimcProfile {
                 if (p.spec == null) {
                     errors.add(new LineError(-1, null, "Specialization not specified"));
                     break;
-                }  
-                if (guessPanda) {
-                    // do some fancy faction checking
-                    p.race = null;
-                }               
+                }              
                 state = 2;                
             }
             if (ignoreSlot(key)) {
@@ -312,6 +338,7 @@ public class SimcProfile {
             int itemId = 0;
             int upgrade = 0;
             int enchantId = 0;
+            String enchantName = null;
             Gem[] gems = null;
             bonuses.clear();
             String[] parts = rest.split(",");
@@ -340,6 +367,10 @@ public class SimcProfile {
                         } catch (NumberFormatException err) {
                             errors.add(new LineError(lineno, line0, String.format("Invalid Upgrade Level: \"%s\"", rest)));
                         }
+                        break;
+                    }
+                    case "enchant": {
+                        enchantName = rest;
                         break;
                     }
                     case "enchant_id": {
@@ -401,6 +432,15 @@ public class SimcProfile {
                 errors.add(new LineError(lineno, line0, "Unknown Item ID: " + itemId));
                 continue;
             }
+            if (guessPanda) {
+                RaceT panda = RaceT.resolvePandaFaction(item.reqRace);
+                if (panda != null) {
+                    p.race = panda;
+                    guessPanda = false;
+                    // revalidate all of the gear we have so far
+                    p.validate(null, e -> errors.add(new LineError(e.getMessage())));
+                }                
+            }
             PlayerSlot slot =  p.SLOT[slotType.index];
             try {
                 slot.setItem(item);
@@ -416,19 +456,29 @@ public class SimcProfile {
             }            
             if (!bonuses.isEmpty()) {
                 errors.add(new LineError(lineno, line0, "Unexpected Item Bonuses: " + bonuses));
-            }
-            if (enchantId != 0) {
-                try {
-                    AbstractEnchant e = wk.findEnchant(item, enchantId);
-                    if (e == null) {                    
+            }         
+            try {
+                AbstractEnchant e = null;
+                if (enchantId != 0) {
+                    e = wk.findEnchant(item, enchantId);
+                    if (e == null) {
                         errors.add(new LineError(lineno, line0, "Unknown Enchant ID: " + enchantId));
-                    } else {
-                        slot.setEnchant(e);                
                     }
-                } catch (PlayerError err) {
-                    errors.add(new LineError(lineno, line0, err.getMessage()));
-                }      
-            }
+                } else if (enchantName != null) {                    
+                    for (AbstractEnchant x: wk.getEnchantUniverse(item).values()) {
+                        if (underscore(x.name).equals(enchantName)) {
+                            e = x;
+                            break;
+                        }                        
+                    }
+                    if (e == null) {
+                        errors.add(new LineError(lineno, line0, String.format("Unknown Enchant Name: \"%s\"", enchantName)));
+                    }
+                }
+                slot.setEnchant(e);                                                
+            } catch (PlayerError err) {
+                errors.add(new LineError(lineno, line0, err.getMessage()));
+            }   
             try {
                 slot.setUpgradeLevel(upgrade);
             } catch (PlayerError err) {
