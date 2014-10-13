@@ -254,7 +254,7 @@ public class Armory {
         return root;
     }
     
-    public String resolveRealmSlug(String realmGuess, RegionT region) { //, boolean silent) {
+    public ArmoryRealm resolveRealm(String realmGuess, RegionT region) { //, boolean silent) {
         try {
             realmGuess = realmGuess.trim();            
             if (realmGuess.isEmpty()) {            
@@ -263,18 +263,15 @@ public class Armory {
             ArrayList<ArmoryRealm> list = getRealmList(region);      
             for (ArmoryRealm x: list) {
                 if (x.realmSlug.equalsIgnoreCase(realmGuess) || x.realmName.equalsIgnoreCase(realmGuess)) {
-                    //System.out.println("Found Match: " + x);
-                    return x.realmSlug;
+                    return x;
                 }      
             }
-            return realmGuess;            
+            throw new ArmoryError("No Match Found");
         } catch (ArmoryError err) {
-            /*if (silent) {
-                return realmGuess;
-            }*/
-            throw new ArmoryError(String.format("Unable to Resolve US Realm \"%s\" Failed: %s", region.name, realmGuess, err.getMessage()));
+            throw new ArmoryError(String.format("Unable to resolve %s realm \"%s\" Failed: %s", region.name, realmGuess, err.getMessage()));
         }        
     }
+    
     
     public String cleanRealmSlug(String realmSlug) {
         return realmSlug.trim().toLowerCase().replaceAll("\\s+", "-");
@@ -502,19 +499,57 @@ public class Armory {
     }
     
     
-    public void visitArmory(String name, String realmSlug, RegionT region) {        
-        String url = "http://" + region.host + "/wow/character/" + _realmSlashName(name, realmSlug) + "/advanced";   
-        if (!SystemHelp.openURL(url)) {
-            throw new ArmoryError("Unable to visit Armory URL: " + url);
-        }
+    public String getArmoryURL(String name, String realmSlug, RegionT region) {        
+        return "http://" + region.host + "/wow/character/" + _realmSlashName(name, realmSlug) + "/advanced";   
     }
     
-    public void visitWowProgress(String name, String realmSlug, RegionT region) {
+    public String getWowProgressURL(String name, String realmSlug, RegionT region) {
         //http://www.wowprogress.com/character/us/suramar/Edgy
-        String url = "http://www.wowprogress.com/character/" + region.name.toLowerCase() + "/" + _realmSlashName(name, realmSlug);   
-        if (!SystemHelp.openURL(url)) {
-            throw new ArmoryError("Unable to visit WoW Progress URL: " + url);
-        }
+        return "http://www.wowprogress.com/character/" + region.name.toLowerCase() + "/" + _realmSlashName(name, realmSlug);           
     }
+    
+    public String getWarcraftLogsURL(String name, String realmSlug, RegionT region) {        
+        //http://www.warcraftlogs.com/search/autocomplete?term=
+        ArmoryRealm realm = resolveRealm(realmSlug, region);
+        name = name.trim().toLowerCase();
+        Result res = hc.fetchData("http://www.warcraftlogs.com/search/autocomplete?term=" + urlEncode(name) + "|name=Search-#.json", HttpCache.ONE_DAY, true);
+        if (res.error != null) {            
+            throw new ArmoryError("Unable to search warcraftlogs.com: " + res.error);
+        }
+        JSONArray root;
+        try {
+            root = (JSONArray)JSONValue.parse(new String(res.data, StandardCharsets.UTF_8));
+            if (root == null) {
+                throw new NullPointerException();
+            }
+        } catch (RuntimeException err) {
+            throw new ArmoryError("Invalid JSON: " + err);
+        }        
+        String prefix = " - ";
+        String suffix = " on " + realm.realmName + " (" + region.name + ")";
+        try {
+            for (Object x: root) {
+                JSONObject info = (JSONObject)x;            
+                String label = JSONHelp.requireStr(info, "label"); //"label":"Character - Edgytriangle on Kel'Thuzad (US)"        
+                                System.out.println(label);
+
+                if (!label.endsWith(suffix)) {
+                    continue;
+                }
+                int pos = label.indexOf(prefix);
+                if (pos == -1) {
+                    continue;
+                }                
+                String charName = label.substring(pos + prefix.length(), label.length() - suffix.length());
+                if (charName.equalsIgnoreCase(name)) {
+                    return "http://www.warcraftlogs.com/" + JSONHelp.requireStr(info, "link");
+                }                
+            }    
+        } catch (RuntimeException err) {
+            throw new ArmoryError("Unable to parse warcraftlogs.com search results");
+        }      
+        throw new ArmoryError(String.format("Unable to \"%s\" on warcraftlogs.com", name));
+    }
+    
     
 }
