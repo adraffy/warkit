@@ -433,7 +433,7 @@ public class SimcProfile {
                 continue;
             }
             if (guessPanda) {
-                RaceT panda = RaceT.resolvePandaFaction(item.reqRace);
+                RaceT panda = RaceT.resolvePandarenFaction(item.reqRace);
                 if (panda != null) {
                     p.race = panda;
                     guessPanda = false;
@@ -578,7 +578,7 @@ public class SimcProfile {
             sb.append(",id=");
             sb.append(item.itemId);
             setBuf.clear();
-            x.getItemBonuses(setBuf);
+            x.collectItemBonuses(setBuf);
             int n = setBuf.size();
             if (n > 0) {
                 sb.append(",bonus_id=");

@@ -1,7 +1,6 @@
 package com.antistupid.warkit.items;
 
 import java.util.Arrays;
-import com.antistupid.warbase.structs.RandomSuffixGroup;
 import com.antistupid.warbase.structs.StatAlloc;
 import com.antistupid.warbase.types.BindT;
 import com.antistupid.warbase.types.EquipT;

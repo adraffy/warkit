@@ -472,7 +472,7 @@ public class CompactGear {
                 }
             }
             bonuses.clear();
-            slot.getItemBonuses(bonuses);
+            slot.collectItemBonuses(bonuses);
             if (!bonuses.isEmpty()) {
                 sb.append(" !");
                 sb.append(bonuses.keys[0]);

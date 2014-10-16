@@ -2,7 +2,7 @@ package com.antistupid.warkit.player;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import com.antistupid.warbase.structs.RandomSuffix;
+import com.antistupid.warkit.items.RandomSuffix;
 import com.antistupid.warbase.stats.StatMap;
 import com.antistupid.warbase.utils.StringBuilderHelp;
 import com.antistupid.warbase.types.ClassT;

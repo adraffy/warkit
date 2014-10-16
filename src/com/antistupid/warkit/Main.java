@@ -1,34 +1,24 @@
 package com.antistupid.warkit;
 
 import com.antistupid.warbase.HttpCache;
-import java.net.URL;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import com.antistupid.warbase.IntSet;
-import com.antistupid.warbase.data.PlayerScaling;
 import com.antistupid.warbase.types.EquipT;
-import com.antistupid.warbase.types.SpecT;
-import com.antistupid.warbase.types.ProfT;
-import com.antistupid.warbase.types.QualityT;
-import com.antistupid.warbase.types.RaceT;
 import com.antistupid.warbase.types.RegionT;
 import com.antistupid.warkit.armory.Armory;
-import com.antistupid.warkit.items.Enchantment;
-import com.antistupid.warkit.items.Gem;
-import com.antistupid.warkit.items.Item;
-import com.antistupid.warkit.items.ItemBonus;
-import com.antistupid.warkit.items.NamedItemBonus;
-import com.antistupid.warkit.items.Wearable;
-import com.antistupid.warkit.player.coders.CompactGear;
 import com.antistupid.warkit.player.Player;
+import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
 
 public class Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args)  {
         
-        WarKit wk = WarKit.load(Paths.get("../WarExport/WKDB.dat"));        
-        HttpCache hc = new HttpCache();
-        Armory a = new Armory(wk, hc);
+        //-verbose:class
+        
+        HttpCache hc = new HttpCache();       
+        WarKit wk = WarKit.load(Paths.get("../WarExport/WKDB.dat"));    
+        Armory a = new Armory(wk, hc, "6maqaabqfmk4k26nguwjtw5c86w33twy");
+        
         
         if (false) {
             a.getRealmList(RegionT.EU).forEach(System.out::println);
@@ -36,18 +26,19 @@ public class Main {
         }
         
         if (false) {
-            wk.wearableMap.values().stream().filter(x -> (x.itemLevel == 397 || x.itemLevel == 378) && x.quality == QualityT.PURPLE && x.nameDesc == null).forEach(x -> System.out.println(x.itemId + " # " + x.name + " (" + x.nameDesc + ")"));            
+            //wk.wearableMap.values().stream().filter(x -> (x.reqLevel > 90 || x.itemLevel == 378) && x.quality == QualityT.PURPLE && x.nameDesc == null).forEach(x -> System.out.println(x.itemId + " # " + x.name + " (" + x.nameDesc + ")"));            
             //wk.wearableMap.get(106604).dump();
+            wk.wearableMap.values().stream().filter(x -> x.itemId > 105000 && x.statAllocs != null && x.statAllocs.length < 3 && x.equip != EquipT.TRINKET).forEach(x -> System.out.println(x.itemId + " # " + x.name));            
             return;
         }
         
-        if (true) {
+        if (false) {
             a.findPlayers("Edgy", RegionT.US, false, 0, null);
             return;
         }
         
         
-        if (false) { 
+        if (true) { 
             Player p = a.getPlayer("Edgy", "Suramar", RegionT.US, 0, false, System.out::println);
             p.WAIST.dump();
             return;

@@ -4,26 +4,22 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import com.antistupid.warbase.structs.RandomSuffix;
-import com.antistupid.warbase.utils.SystemHelp;
 import com.antistupid.warbase.types.ClassT;
 import com.antistupid.warbase.types.ProfT;
 import com.antistupid.warbase.types.RaceT;
 import com.antistupid.warbase.types.RegionT;
-import com.antistupid.warbase.types.SpecT;
 import com.antistupid.warbase.HttpCache;
 import com.antistupid.warbase.HttpCache.Result;
+import com.antistupid.warbase.IntSet;
 import com.antistupid.warkit.JSONHelp;
 import com.antistupid.warkit.WarKit;
 import com.antistupid.warkit.items.AbstractEnchant;
 import com.antistupid.warkit.items.Gem;
-import com.antistupid.warkit.items.Item;
 import com.antistupid.warkit.items.Wearable;
 import com.antistupid.warkit.player.Player;
 import com.antistupid.warkit.player.PlayerError;
@@ -33,10 +29,12 @@ public class Armory {
 
     final WarKit wk;
     final HttpCache hc;
+    final String apiKey;
     
-    public Armory(WarKit wk, HttpCache hc) {
+    public Armory(WarKit wk, HttpCache hc, String apiKey) {
         this.wk = wk;
         this.hc = hc;
+        this.apiKey = apiKey;
     }
     
     
@@ -204,7 +202,7 @@ public class Armory {
     }
     
     public ArrayList<ArmorySearchResult> findPlayers(String name, RegionT region, boolean force, int maxResults, Predicate<ArmorySearchResult> filter) {
-        String url0 = "http://" + region.host + "/wow/en/search?f=wowcharacter&sort=level&dir=d&q=" + urlEncode(name) + "&page=";
+        String url0 = "http://" + region.wwwURLPrefix + "/wow/en/search?f=wowcharacter&sort=level&dir=d&q=" + urlEncode(name) + "&page=";
         int page = 0;
         int maxPages = 1;
         Result last;
@@ -223,7 +221,6 @@ public class Armory {
             extract(html, x -> {
                 if (filter == null || filter.test(x)) {
                     matches.add(x);
-                    //System.out.println(x);
                 }                
             });
             if (maxResults > 0 && matches.size() >= maxResults) {
@@ -239,11 +236,8 @@ public class Armory {
         }
         JSONObject root;
         try {
-            root = (JSONObject)JSONValue.parse(new String(res.data, StandardCharsets.UTF_8));
-            if (root == null) {
-                throw new NullPointerException();
-            }
-        } catch (RuntimeException err) {
+            root = (JSONObject)JSONValue.parseWithException(new String(res.data, StandardCharsets.UTF_8));
+        } catch (Exception err) {
             throw new ArmoryError("Invalid JSON: " + err);
         }        
         String status = (String)root.get("status");        
@@ -256,7 +250,7 @@ public class Armory {
     
     public ArmoryRealm resolveRealm(String realmGuess, RegionT region) { //, boolean silent) {
         try {
-            realmGuess = realmGuess.trim();            
+            realmGuess = cleanRealmSlug(realmGuess);      
             if (realmGuess.isEmpty()) {            
                 throw new IllegalArgumentException("Realm is empty");
             }
@@ -266,19 +260,14 @@ public class Armory {
                     return x;
                 }      
             }
-            throw new ArmoryError("No Match Found");
+            throw new ArmoryError(String.format("No %s realm named \"%s\"", region.name, realmGuess));
         } catch (ArmoryError err) {
-            throw new ArmoryError(String.format("Unable to resolve %s realm \"%s\" Failed: %s", region.name, realmGuess, err.getMessage()));
+            throw new ArmoryError(String.format("Resolve %s realm \"%s\" Failed: %s", region.name, realmGuess, err.getMessage()));
         }        
     }
-    
-    
-    public String cleanRealmSlug(String realmSlug) {
-        return realmSlug.trim().toLowerCase().replaceAll("\\s+", "-");
-    }
-    
+        
     public ArrayList<ArmoryRealm> getRealmList(RegionT region) {        
-        String url = "http://" + region.host + "/api/wow/realm/status|name=Realms.json";           
+        String url = _prefix(region) + "wow/realm/status?apikey=" + apiKey + "|name=Realms.json";       
         try {
             JSONObject root = json(hc.fetchData(url, HttpCache.ONE_DAY, true));        
             JSONArray realmList = (JSONArray)root.get("realms");          
@@ -292,7 +281,7 @@ public class Armory {
             } 
             return list;
         } catch (RuntimeException err) {
-            throw new ArmoryError("Realm List Failed: " + err.getMessage());
+            throw new ArmoryError(region.name + " Realm List Failed: " + err.getMessage());
         }
     }
     
@@ -302,13 +291,20 @@ public class Armory {
     
     static final String SPEC_CHARS = "aZbY";
     
+    static public String cleanRealmSlug(String realmSlug) {
+        return realmSlug.trim().toLowerCase().replaceAll("\\s+", "-");
+    }
+    
     private String _realmSlashName(String name, String realmSlug) {        
-        return urlEncode(realmSlug.toLowerCase().replaceAll("\\s+", "-")) +  "/" + urlEncode(name.trim());
+        return urlEncode(cleanRealmSlug(realmSlug)) + "/" + urlEncode(name.trim());
+    }                  
+    private String _prefix(RegionT region) {
+        return apiKey != null ? region.apiURLPrefix : region.wwwURLPrefix + "api/";
     }
     
     public Player getPlayer(String name, String realmSlug, RegionT region, int talentIndex, boolean force, Consumer<String> errors) { 
-        String base = "http://" + region.host + "/api/wow/character/" + _realmSlashName(name, realmSlug);
-        String url = base + "?fields=items,talents,professions&locale=en|dir=Character|name=#.json";    
+        String base = _prefix(region) + "wow/character/" + _realmSlashName(name, realmSlug);
+        String url = base + "?fields=items,talents,professions&locale=en_US&apikey=" + apiKey + "|dir=Character|name=#.json";    
         JSONObject root;
         try {
             root = json(hc.fetchData(url, force ? -1 : 60000, true));  
@@ -317,7 +313,7 @@ public class Armory {
         }
         JSONObject localized;
         if (region.asia) {
-            String url2 = base + "|dir=Localized|name=#.json";    
+            String url2 = base + "?apikey=" + apiKey + "|dir=Localized|name=#.json";    
             try {
                 localized = json(hc.fetchData(url2, force ? -1 : HttpCache.ONE_DAY, true));  
             } catch (RuntimeException err) {
@@ -331,16 +327,16 @@ public class Armory {
             p.playerName = JSONHelp.requireStr(localized, "name");            
             p.playerMale = JSONHelp.requireInt(root, "gender") == 0;
             p.realmName = JSONHelp.requireStr(localized, "realm");
-            p.playerLevel = JSONHelp.requireNum(root, "level").intValue();
+            p.playerLevel = JSONHelp.requireInt(root, "level");
             p.realmSlug = realmSlug; // this must be valid since it worked
             p.region = region; // same
         } catch (RuntimeException err) {
-            throw new ArmoryError("Parse Player Failed (Header)" + err);
+            throw new ArmoryError("Parse Player Failed" + err);
         }
         // identity is defined
         try {
-            ClassT cls = ClassT.db.by_id.require(JSONHelp.requireNum(root, "class").intValue());
-            RaceT race = RaceT.db.by_id.require(JSONHelp.requireNum(root, "race").intValue());
+            ClassT cls = ClassT.db.by_id.require(JSONHelp.requireInt(root, "class"));
+            RaceT race = RaceT.db.by_id.require(JSONHelp.requireInt(root, "race"));
             JSONArray talents = JSONHelp.require(root, "talents", JSONArray.class);     
             
             JSONObject talentInfo = null;
@@ -414,9 +410,21 @@ public class Armory {
             slot.clear(); // not needed
             return;
         }
-        int itemId = JSONHelp.requireNum(root, "id").intValue();        
+        int itemId = JSONHelp.requireInt(root, "id");    
         slot.setItem(wk.wearableMap.get(itemId));
         Wearable item = slot.getItem();
+        
+        JSONArray bonusList = JSONHelp.get(root, "bonusLists", JSONArray.class);
+        if (bonusList != null) {
+            IntSet bonuses = new IntSet();
+            for (Object x: bonusList) {
+                bonuses.add(((Number)x).intValue());
+            }            
+            slot.setItemBonuses(bonuses);
+            if (!bonuses.isEmpty()) {
+                errors.accept(String.format("%s: Unknown Item Bonuses: %s", slot.slotType, bonuses));
+            }
+        }
         
         JSONObject paramMap = JSONHelp.get(root, "tooltipParams", JSONObject.class);
         if (paramMap != null) {
@@ -500,7 +508,7 @@ public class Armory {
     
     
     public String getArmoryURL(String name, String realmSlug, RegionT region) {        
-        return "http://" + region.host + "/wow/character/" + _realmSlashName(name, realmSlug) + "/advanced";   
+        return "http://" + region.wwwURLPrefix + "/wow/character/" + _realmSlashName(name, realmSlug) + "/advanced";   
     }
     
     public String getWowProgressURL(String name, String realmSlug, RegionT region) {

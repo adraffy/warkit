@@ -15,8 +15,8 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import com.antistupid.warbase.IntSet;
-import com.antistupid.warbase.structs.RandomSuffix;
-import com.antistupid.warbase.structs.RandomSuffixGroup;
+import com.antistupid.warkit.items.RandomSuffix;
+import com.antistupid.warkit.items.RandomSuffixGroup;
 import com.antistupid.warbase.structs.StatAlloc;
 import com.antistupid.warbase.utils.Misc;
 import com.antistupid.warbase.data.AsiaUpgradeChain;
@@ -321,6 +321,7 @@ public class WarKit {
                 nameDescMap.put(id, name);
             } 
             */
+            
             ArrayList<SocketT> socketBuf = new ArrayList<>();
             ArrayList<StatAlloc> statAllocBuf = new ArrayList<>();
             for (int i = 0; i < itemBonusCount; i++) {
@@ -381,7 +382,7 @@ public class WarKit {
                 //flatItemBonusMap.put(id, f);
             }        
             // itemBonusMap.put(ItemBonus.IDENTITY.id, ItemBonus.IDENTITY); // hax?
-            
+             
             for (int i = 0; i < namedGroupCount; i++) {
                 int id = in.readUnsignedByte();
                 String name0 = in.readUTF();
@@ -403,7 +404,7 @@ public class WarKit {
                     }
                 }                
                 namedGroupMap.put(id, new BonusGroup(id, map.values().toArray(new ItemBonus[map.size()]), universe, defaultIndex));                
-            }            
+            }           
             for (int i = 0; i < auxGroupCount; i++) {
                 int id = in.readUnsignedShort();
                 int num = in.readUnsignedByte();
@@ -446,7 +447,7 @@ public class WarKit {
                         uni.toArray(new NamedItemBonus[uni.size()]), 0));                
             }
             for (int i = 0; i < suffixCount; i++) {
-                int id = in.readUnsignedShort();
+                int id = in.readShort();
                 String name = in.readUTF();
                 int num = in.readUnsignedByte();
                 StatAlloc[] statAllocs = new StatAlloc[num];
@@ -462,15 +463,15 @@ public class WarKit {
                     } else {
                         name = null;
                     }
-                }
-                suffixMap.put(id, new RandomSuffix(id, name, statAllocs, null));
+                }       
+                suffixMap.put(id, new RandomSuffix(id, name, statAllocs, itemBonusMap.get(-id)));
             }
             for (int i = 0; i < suffixGroupCount; i++) {
                 int id = in.readShort();
                 int num = in.readUnsignedByte();
                 RandomSuffix[] v = new RandomSuffix[num];
                 for (int j = 0; j < num; j++) {
-                    v[j] = suffixMap.get(in.readUnsignedShort()); // must exist
+                    v[j] = suffixMap.get((int)in.readShort()); // must exist
                 }
                 //Arrays.sort(v, (a, b) -> a.n);
                 suffixGroupMap.put(id, new RandomSuffixGroup(id, v));

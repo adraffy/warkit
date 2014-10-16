@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import com.antistupid.warbase.IntSet;
-import com.antistupid.warbase.structs.RandomSuffix;
-import com.antistupid.warbase.structs.RandomSuffixGroup;
+import com.antistupid.warkit.items.RandomSuffix;
+import com.antistupid.warkit.items.RandomSuffixGroup;
 import com.antistupid.warbase.structs.StatAlloc;
 import com.antistupid.warbase.stats.StatMap;
 import com.antistupid.warbase.data.ArmorCurve;
@@ -22,7 +22,6 @@ import com.antistupid.warbase.types.StatT;
 import com.antistupid.warbase.types.WeaponT;
 import com.antistupid.warkit.items.AbstractEnchant;
 import com.antistupid.warkit.items.Armor;
-import com.antistupid.warkit.items.AuxBonusGroup;
 import com.antistupid.warkit.items.Enchantment;
 import com.antistupid.warkit.items.Gem;
 import com.antistupid.warkit.items.Item;
@@ -420,10 +419,13 @@ public class PlayerSlot {
     }
     public IntSet getItemBonuses() {
         IntSet set = new IntSet();
-        getItemBonuses(set);
+        collectItemBonuses(set);
         return set;
     }
-    public void getItemBonuses(IntSet set) {
+    public void collectItemBonuses(IntSet set) {
+        if (_item == null) {
+            return;
+        }
         if (_item.namedBonusGroup != null) {     
             for (ItemBonus x: _item.namedBonusGroup.universe[_namedBonusIndex].components) {
                 set.add(x.id);
@@ -552,8 +554,15 @@ public class PlayerSlot {
         }
         RandomSuffix suffix = getSuffix();
         if (suffix != null) {            
-            for (StatAlloc x: suffix.statAllocs) {             
-                _gearStats.add(x.stat, (int)(statBudget * x.alloc));
+            if (suffix.statAllocs != null) {
+                for (StatAlloc x: suffix.statAllocs) {             
+                    _gearStats.add(x.stat, (int)(statBudget * x.alloc));
+                }            
+            }
+            if (suffix.bonus != null && suffix.bonus.statAllocs != null) {
+                for (StatAlloc x: suffix.bonus.statAllocs) {             
+                    _gearStats.add(x.stat, (int)(statBudget * x.alloc));
+                }
             }            
         }
         if (_item instanceof Armor) {
@@ -586,15 +595,18 @@ public class PlayerSlot {
                     }
                 }
             }            
-        }        
-        if (suffix != null && suffix.sockets != null) {
-            for (SocketT x: _item.sockets) {
+        }       
+        if (suffix != null && suffix.bonus != null && suffix.bonus.sockets != null) {
+            for (SocketT x: suffix.bonus.sockets) {
                 _socket[newSockets++]._socket = x;
             }
         }    
         /*if (_extraSocket > 1) {
             _extraSocket = canExtraSocket() ? 1 : 0;                
         }*/
+        // i dont know what comes first socket wise
+        // gear > bonuses? > extra 
+        // it probably doesn't happen
         if (_extraSocket) {
             _socket[newSockets++]._socket = SocketT.PRISMATIC;
         }        
@@ -618,7 +630,7 @@ public class PlayerSlot {
             // _socket namedBonuses are only stats
             // never _prof requirement
             _socketBonusSatisfied = true;
-            for (int i = 0; i < _socketCount; i++) {
+            for (int i = 0; i < _item.sockets.length; i++) {
                 if (!_socket[i].matches(true)) {
                     _socketBonusSatisfied = false;
                     break;
@@ -642,6 +654,10 @@ public class PlayerSlot {
             _socketBonusSatisfied = false;
         }
         
+    }
+    
+    public StatMap getGearStats() {
+        return _gearStats;
     }
     
     public StatMap getSocketBonusStats() {

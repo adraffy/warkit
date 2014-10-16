@@ -277,6 +277,23 @@ public class Player {
     }
     */
     
+    public boolean canArmorSpecialization() {
+        return spec != null && playerLevel >= SpecT.PLAYER_LEVEL_ARMOR_SPECIALIZATION;
+    }
+    
+    public boolean hasArmorSpecialization() {
+        if (!canArmorSpecialization()) {
+            return false;            
+        }
+        for (PlayerSlot x: SLOT) {
+            if (x.slotType.bodyPart == SlotT.BODYPART_ARMOR) {
+                if (x.isEmpty() || x.getItem().type != spec.armorType) {
+                    return false;
+                }                
+            }
+        }        
+        return true;
+    }    
     
     public void validate() { validate(null, null); }
     public void validate(Player buf, Consumer<PlayerError> errors) {

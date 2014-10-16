@@ -1,6 +1,5 @@
 package com.antistupid.warkit.items;
 
-import com.antistupid.warbase.structs.RandomSuffixGroup;
 import com.antistupid.warbase.structs.StatAlloc;
 import com.antistupid.warbase.types.ArmorT;
 import com.antistupid.warbase.types.EquipT;

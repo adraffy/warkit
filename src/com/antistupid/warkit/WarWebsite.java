@@ -5,12 +5,12 @@ import com.antistupid.warkit.items.AbstractEnchant;
 import com.antistupid.warkit.items.Item;
 import com.antistupid.warkit.items.ItemSet;
 
-abstract public class ExternalWebsite {
+abstract public class WarWebsite {
 
     public final String name;
     public final String baseURL;
     
-    public ExternalWebsite(String name, String baseURL) {
+    public WarWebsite(String name, String baseURL) {
         this.name = name;
         this.baseURL = baseURL;
         
@@ -34,7 +34,7 @@ abstract public class ExternalWebsite {
         return SystemHelp.openURL(url);        
     }
     
-    static public final ExternalWebsite WOWHEAD = new ExternalWebsite("Wowhead", "http://wod.wowhead.com/") {
+    static public final WarWebsite WOWHEAD = new WarWebsite("Wowhead", "http://wod.wowhead.com/") {
         @Override
         public String getItemURL(int id) {
             return baseURL + "item=" + id;
@@ -49,7 +49,7 @@ abstract public class ExternalWebsite {
         }        
     };
     
-    static public final ExternalWebsite WOWDB = new ExternalWebsite("WowDB", "http://beta.wowdb.com/") {
+    static public final WarWebsite WOWDB = new WarWebsite("WowDB", "http://beta.wowdb.com/") {
         @Override
         public String getItemURL(int id) {
             return baseURL + "items/" + id;
