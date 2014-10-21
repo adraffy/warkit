@@ -60,7 +60,7 @@ public class ItemBonus {
     }
     
     static public final Comparator<ItemBonus> CMP_ID = (a, b) -> a.id - b.id;
-    static public final Comparator<ItemBonus[]> CMP_ARRAY = Misc.makeArrayComparator(CMP_ID);
+    static public final Comparator<ItemBonus[]> CMP_ARRAY = Misc.arrayComparator(CMP_ID);
 
     static public double score(ItemBonus[] components, IntSet ids) {
         int match = match(components, ids);        

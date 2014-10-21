@@ -6,6 +6,7 @@ import com.antistupid.warbase.types.EquipT;
 import com.antistupid.warbase.types.RegionT;
 import com.antistupid.warkit.armory.Armory;
 import com.antistupid.warkit.player.Player;
+import com.antistupid.warkit.player.coders.CompactGear;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 
@@ -18,6 +19,23 @@ public class Main {
         HttpCache hc = new HttpCache();       
         WarKit wk = WarKit.load(Paths.get("../WarExport/WKDB.dat"));    
         Armory a = new Armory(wk, hc, "6maqaabqfmk4k26nguwjtw5c86w33twy");
+        
+        
+        if (false) {            
+            wk.wearableMap.get(109759).dump();
+            return;
+        }
+        
+        
+        if (true) {
+            
+            Player p = new Player();
+            CompactGear.fromString("109759 $5324 :115809 !524/561/564 ", p, wk);
+            
+            
+            
+            return;
+        }
         
         
         if (false) {
@@ -33,7 +51,7 @@ public class Main {
         }
         
         if (false) {
-            a.findPlayers("Edgy", RegionT.US, false, 0, null);
+            a.findPlayers("Edgy", RegionT.US, false, 0, null).forEach(System.out::println);
             return;
         }
         

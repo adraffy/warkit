@@ -6,20 +6,22 @@ import java.util.Comparator;
 
 public class ArmorySearchResult {
 
-    public String name;
-    public String realmName;
-    public String realmSlug;
-    public int level;
-    public RaceT race;
-    public ClassT cls;
-    public String guild; // null for no guild
+    public final String name;
+    public final String realmName;
+    public final String realmSlug;
+    public final int level;
+    public final RaceT race;
+    public final boolean male;
+    public final ClassT cls;
+    public final String guild; // null for no guild
     
-    ArmorySearchResult(String name, String realmName, String realmSlug, int level, RaceT race, ClassT cls, String guild) {
+    ArmorySearchResult(String name, String realmName, String realmSlug, int level, RaceT race, boolean male, ClassT cls, String guild) {
         this.name = name;
         this.realmName = realmName;
         this.realmSlug = realmSlug;
         this.level = level;
         this.race = race;
+        this.male = male;
         this.cls = cls;
         this.guild = guild;
     }

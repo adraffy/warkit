@@ -39,8 +39,9 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
     public final Upgrade upgrade;
     public final int pvpItemLevelDelta;
     public final RandomSuffixGroup suffixGroup;
-    public final BonusGroup namedBonusGroup;
-    public final BonusGroup auxBonusGroup;
+    //public final BonusGroup namedBonusGroup;
+    //public final BonusGroup auxBonusGroup;
+    public final ItemContext[] contexts;
     public final Wearable[] itemGroup;
     public final int groupIndex;
     public final ItemSet set;
@@ -57,7 +58,7 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
             String nameDesc, int reqLevel, int reqLevelMax, int reqLevelCurveId, 
             StatAlloc[] statAllocs, SocketT[] sockets, Enchantment socketBonus,
             Upgrade upgrade, int pvpItemLevel,
-            RandomSuffixGroup suffixGroup, BonusGroup namedGroup, BonusGroup auxGroup,
+            RandomSuffixGroup suffixGroup, ItemContext[] contexts,
             ItemSet set, Wearable[] group, int groupIndex, int[] itemSpells, boolean extraSocket
     ) {        
         super(
@@ -76,8 +77,9 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
         this.upgrade = upgrade;
         this.pvpItemLevelDelta = pvpItemLevel;
         this.suffixGroup = suffixGroup;
-        this.namedBonusGroup = namedGroup;
-        this.auxBonusGroup = auxGroup;
+        //this.namedBonusGroup = namedGroup;
+        //this.auxBonusGroup = auxGroup;
+        this.contexts = contexts;
         this.set = set;
         this.itemGroup = group;
         this.groupIndex = groupIndex;
@@ -108,7 +110,22 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
             for (int i = 0; i < suffixGroup.suffixes.length; i++) {
                 sb.append(String.format("Suffix%02d: ", i + 1)).append(suffixGroup.suffixes[i]).append("\n");
             }                
-        }        
+        }     
+        if (contexts != null) {
+            for (int i = 0; i < contexts.length; i++) {
+                ItemContext ctx = contexts[i];
+                sb.append(String.format("Contexts%02d: ", i + 1)).append(ctx.defaultBonus.name).append(" <").append(ctx.context).append(">").append("\n");                
+                sb.append(" - Default: ").append(ctx.defaultBonus).append("\n");
+                if (ctx.optionalBonuses != null) {
+                    for (int j = 0; j < ctx.optionalBonuses.length; j++) {
+                        sb.append(String.format(" - Optional%2d: ", j + 1)).append(ctx.optionalBonuses[j]).append("\n");
+                    }           
+                }
+                
+            }
+            
+        }
+        /*
         if (namedBonusGroup != null) {
             for (int i = 0; i < namedBonusGroup.universe.length; i++) {
                 sb.append("NamedBonus").append(1 + i).append(": ").append(namedBonusGroup.universe[i]).append("\n");
@@ -119,6 +136,7 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
                 sb.append("AuxBonus").append(1 + i).append(": ").append(auxBonusGroup.universe[i]).append("\n");
             }
         }
+        */
         if (itemGroup != null) {
             for (int i = 0; i < itemGroup.length; i++) {
                 sb.append("Group").append(1 + i).append(": <").append(itemGroup[i].groupIndex).append(":").append(itemGroup[i].itemId).append("> ").append(itemGroup[i].nameDesc);

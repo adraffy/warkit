@@ -110,6 +110,24 @@ public class Armory {
         }
     }
     
+    static private boolean parseGender(String temp) {
+        String prefix = "/race_";
+        int pos = temp.indexOf(prefix);
+        if (pos == -1) {
+            return true;
+        }
+        pos += prefix.length();
+        pos = temp.indexOf('_', pos);
+        if (pos == -1) {
+            return true;
+        }
+        try {
+            return temp.charAt(pos + 1) != '1';
+        } catch (NumberFormatException err) {
+            return true;
+        }
+    }
+    
     static private ClassT parseClass(String temp) {
         String prefix = "/class_";
         int pos = temp.indexOf(prefix);
@@ -195,14 +213,15 @@ public class Armory {
             if (realmName == null) {
                 continue;
             }
+            boolean male = parseGender(comp[2]);            
             String realmSlug = html.substring(index, html.indexOf('/', index));
-            c.accept(new ArmorySearchResult(name, realmName, realmSlug, level, race, cls, guildName));            
+            c.accept(new ArmorySearchResult(name, realmName, realmSlug, level, race, male, cls, guildName));            
         }
         
     }
     
     public ArrayList<ArmorySearchResult> findPlayers(String name, RegionT region, boolean force, int maxResults, Predicate<ArmorySearchResult> filter) {
-        String url0 = "http://" + region.wwwURLPrefix + "/wow/en/search?f=wowcharacter&sort=level&dir=d&q=" + urlEncode(name) + "&page=";
+        String url0 = region.wwwURLPrefix + "/wow/en/search?f=wowcharacter&sort=level&dir=d&q=" + urlEncode(name) + "&page=";
         int page = 0;
         int maxPages = 1;
         Result last;

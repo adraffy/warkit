@@ -27,7 +27,8 @@ import com.antistupid.warkit.items.Gem;
 import com.antistupid.warkit.items.Item;
 import com.antistupid.warkit.items.ItemBonus;
 import com.antistupid.warkit.items.BonusGroup;
-import com.antistupid.warkit.items.NamedItemBonus;
+import com.antistupid.warkit.items.ItemContext;
+import com.antistupid.warkit.items.ItemBonusCluster;
 import com.antistupid.warkit.items.Unique;
 import com.antistupid.warkit.items.UpgradeChain;
 import com.antistupid.warkit.items.Weapon;
@@ -63,8 +64,8 @@ public class PlayerSlot {
     Wearable _item; // item or weapon
     int _itemLevelCustom;    
     final PlayerSocket[] _socket = new PlayerSocket[Player.MAX_SOCKETS];
-    int _namedBonusIndex;
-    int _auxBonusIndex;
+    int _contextIndex;
+    int _contextOptionIndex;
     int _suffixIndex;
     int _upgradeIndex;
     boolean _extraSocket;
@@ -215,9 +216,9 @@ public class PlayerSlot {
         }     
         clear();
         _item = (Wearable)item;       
-        if (_item.namedBonusGroup != null) {
-            _namedBonusIndex = _item.namedBonusGroup.defaultIndex; // fuckign default to raid finder my ass!
-        }
+        /*if (_item.namedBonusGroup != null) {
+            _contextIndex = _item.namedBonusGroup.defaultIndex; // fuckign default to raid finder my ass!
+        }*/
         if (slotType == SlotT.MAIN_HAND) {
             owner._bothHandsForMH = bothHands;
         }        
@@ -377,45 +378,52 @@ public class PlayerSlot {
         }        
     }    
     */
-    public void setNamedBonusIndex(int index) {
+    public void setContextIndex(int index) {
         if (_item == null) {
             return;
         }
-        if (_item.namedBonusGroup == null) {
-            throw new PlayerError.EquipSlot(this, _item, "No Named Item Bonuses");
+        if (_item.contexts == null) {
+            throw new PlayerError.EquipSlot(this, _item, "No Contexts");
         }
-        if (index < 0 || index >= _item.namedBonusGroup.universe.length) {
-            throw new PlayerError.EquipSlot(this, _item, "Invalid Named Item Bonus Index: " + index);
+        if (index < 0 || index >= _item.contexts.length) {
+            throw new PlayerError.EquipSlot(this, _item, "Invalid Context Index: " + index);
         }
-        _namedBonusIndex = index;
+        
+        _contextIndex = index;   
+        
+        _contextOptionIndex = 0; // can we coerce this?       
         update();       
-        setExtraSocket(_extraSocket && canExtraSocket());    
+        //setExtraSocket(_extraSocket && canExtraSocket());  // why is this here   
     }
-    public int getNamedBonusIndex() {
-        return _namedBonusIndex;
+    public int getContextIndex() {
+        return _contextIndex;
     }
-    public BonusGroup getNamedBonuses() {
-        return _item == null ? null : _item.namedBonusGroup;
-    }    
-    
-    public void setAuxBonusIndex(int index) {        
+    public ItemContext getContext() {
+        return _item != null && _item.contexts != null ? _item.contexts[_contextIndex] : null;
+    }
+    public ItemBonusCluster getContextOption() {
+        ItemContext ctx = getContext();
+        return ctx != null && ctx.optionalBonuses.length > 0 ? ctx.optionalBonuses[_contextOptionIndex] : null;
+    }
+    public void setContextOptionIndex(int index) {        
         if (_item == null) {
             return;
         }
-        if (_item.auxBonusGroup == null) {
-            throw new PlayerError.EquipSlot(this, _item, "No Aux Item Bonuses");
+        ItemContext ctx = getContext();
+        if (ctx == null) {
+            throw new PlayerError.EquipSlot(this, _item, "No Contexts");
         }
-        if (index < 0 || index >= _item.auxBonusGroup.universe.length) {
-            throw new PlayerError.EquipSlot(this, _item, "Invalid Aux Item Bonus Index: " + index);
+        if (ctx.optionalBonuses.length == 0) {
+            throw new PlayerError.EquipSlot(this, _item, "Context has no options");
+        }        
+        if (index < 0 || index >= ctx.optionalBonuses.length) {
+            throw new PlayerError.EquipSlot(this, _item, "Invalid Context Option Index: " + index);
         }
-        _auxBonusIndex = index;
+        _contextOptionIndex = index;
         update();        
     }
-    public int getAuxBonusIndex() {
-        return _auxBonusIndex;
-    }
-    public BonusGroup getAuxBonuses() {
-        return _item == null ? null : _item.auxBonusGroup;
+    public int getContextOptionIndex() {
+        return _contextOptionIndex;
     }
     public IntSet getItemBonuses() {
         IntSet set = new IntSet();
@@ -426,16 +434,28 @@ public class PlayerSlot {
         if (_item == null) {
             return;
         }
-        if (_item.namedBonusGroup != null) {     
-            for (ItemBonus x: _item.namedBonusGroup.universe[_namedBonusIndex].components) {
+        ItemContext ctx = getContext();
+        if (ctx != null) {
+            for (ItemBonus x: ctx.defaultBonus.components) {
+                set.add(x.id);
+            }
+            if (ctx.optionalBonuses != null) {
+                for (ItemBonus x: ctx.optionalBonuses[_contextOptionIndex].components) {
+                    set.add(x.id);
+                }
+            }
+        }
+        
+        /*if (_item.namedBonusGroup != null) {     
+            for (ItemBonus x: _item.namedBonusGroup.universe[_contextIndex].components) {
                 set.add(x.id);
             }
         }
         if (_item.auxBonusGroup != null) {
-            for (ItemBonus x: _item.auxBonusGroup.universe[_auxBonusIndex].components) {
+            for (ItemBonus x: _item.auxBonusGroup.universe[_contextOptionIndex].components) {
                 set.add(x.id);
             }            
-        }
+        }*/
     }    
     // warning: mutates set, leaves unused bonuses
     public void setItemBonuses(IntSet set) {
@@ -445,9 +465,43 @@ public class PlayerSlot {
             }
             return;
         } 
+        if (_item.contexts != null) {                        
+            int bestIndex = 0;
+            ItemContext[] v = _item.contexts;
+            double bestScore = ItemBonus.score(v[0].components, set);
+            for (int i = 1; i < v.length; i++) {
+                double score = ItemBonus.score(v[i].components, set);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestIndex = i;
+                }
+            }    
+            _contextIndex = bestIndex;     
+            ItemContext ctx = v[bestIndex];
+            ItemBonus.remove(ctx.defaultBonus.components, set);
+            if (ctx.optionalBonuses != null) {
+                bestIndex = 0;
+                ItemBonusCluster[] u = ctx.optionalBonuses;
+                bestScore = ItemBonus.score(u[0].components, set);
+                for (int i = 1; i < u.length; i++) {
+                    double score = ItemBonus.score(u[i].components, set);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestIndex = i;
+                    }
+                }     
+                _contextOptionIndex = bestIndex;
+                ItemBonus.remove(u[bestIndex].components, set);
+            } else {
+                _contextOptionIndex = 0;
+            }
+        }
+        
+        
+        /*
         if (_item.namedBonusGroup != null) {                        
             int bestIndex = 0;
-            NamedItemBonus[] v = _item.namedBonusGroup.universe;
+            ItemBonusCluster[] v = _item.namedBonusGroup.universe;
             double bestScore = ItemBonus.score(v[0].components, set);
             for (int i = 1; i < v.length; i++) {
                 double score = ItemBonus.score(v[i].components, set);
@@ -456,12 +510,12 @@ public class PlayerSlot {
                     bestIndex = i;
                 }
             }     
-            _namedBonusIndex = bestIndex;            
+            _contextIndex = bestIndex;            
             ItemBonus.remove(v[bestIndex].components, set);
         }
         if (_item.auxBonusGroup != null) {
             int bestIndex = 0;
-            NamedItemBonus[] v = _item.auxBonusGroup.universe;
+            ItemBonusCluster[] v = _item.auxBonusGroup.universe;
             double bestScore = ItemBonus.score(v[0].components, set);
             for (int i = 1; i < v.length; i++) {
                 double score =  ItemBonus.score(v[i].components, set);
@@ -470,9 +524,10 @@ public class PlayerSlot {
                     bestIndex = i;
                 }
             }                
-            _auxBonusIndex = bestIndex;
+            _contextOptionIndex = bestIndex;
             ItemBonus.remove(v[bestIndex].components, set);
         }    
+        */
         update();    
     }
     
@@ -514,12 +569,12 @@ public class PlayerSlot {
             _reqLevel = _item.reqLevel;
             ilvl = _item.itemLevel;
         } 
-        if (_item.namedBonusGroup != null) {
-            NamedItemBonus bonus = _item.namedBonusGroup.universe[_namedBonusIndex];
-            ilvl += bonus.itemLevelDelta; 
-            _reqLevel += bonus.reqLevelDelta;
-            _nameDesc = bonus.name;
-            _quality = QualityT.max(_quality, bonus.quality); // necessary?
+        ItemContext ctx = getContext();
+        if (ctx != null) {
+            _nameDesc = ctx.defaultBonus.name;
+            ilvl += ctx.defaultBonus.itemLevelDelta; 
+            _reqLevel += ctx.defaultBonus.reqLevelDelta;
+            _quality = QualityT.max(_quality, ctx.defaultBonus.quality); // necessary?
         } else {
             _nameDesc = _item.nameDesc;
         }
@@ -542,7 +597,7 @@ public class PlayerSlot {
         _itemLevelScaled = ilvl;
         
         int randPropIndex = _item.getRandPropIndex();        
-        double statBudget = ItemStatCurve.get(ilvl, _quality, randPropIndex) / 10000D;
+        double statBudget = ItemStatCurve.get(ilvl, _quality, randPropIndex);
         _gearStats.clear();        
         if (_item.statAllocs != null) {    
             int socketCost = SocketCostCurve.get(ilvl);
@@ -551,19 +606,6 @@ public class PlayerSlot {
                 double r = x.mod * socketCost;                
                 _gearStats.add(x.stat, (int)(0.5 + l) - (int)(0.5 + r));
             }
-        }
-        RandomSuffix suffix = getSuffix();
-        if (suffix != null) {            
-            if (suffix.statAllocs != null) {
-                for (StatAlloc x: suffix.statAllocs) {             
-                    _gearStats.add(x.stat, (int)(statBudget * x.alloc));
-                }            
-            }
-            if (suffix.bonus != null && suffix.bonus.statAllocs != null) {
-                for (StatAlloc x: suffix.bonus.statAllocs) {             
-                    _gearStats.add(x.stat, (int)(statBudget * x.alloc));
-                }
-            }            
         }
         if (_item instanceof Armor) {
             Armor a = (Armor)_item;
@@ -581,24 +623,30 @@ public class PlayerSlot {
                 _socket[newSockets++]._socket = x;
             }
         }
-        if (_item.auxBonusGroup != null) {            
-            NamedItemBonus bonus = _item.auxBonusGroup.universe[_auxBonusIndex];            
-            for (ItemBonus b: bonus.components) {
+        if (ctx != null) {
+            if (ctx.defaultBonus.sockets != null) {
+                for (SocketT x: ctx.defaultBonus.sockets) {
+                    _socket[newSockets++]._socket = x;
+                }
+            }
+            StatAlloc.collectStats(_gearStats, ctx.defaultBonus.statAllocs, statBudget);
+            if (ctx.optionalBonuses != null) {
+                ItemBonusCluster b = ctx.optionalBonuses[_contextOptionIndex];                
                 if (b.sockets != null) {
                     for (SocketT x: b.sockets) {
                         _socket[newSockets++]._socket = x;
                     }
                 }
-                if (b.statAllocs != null) {
-                    for (StatAlloc x: b.statAllocs) {
-                        _gearStats.add(x.stat, (int)(0.5 + statBudget * x.alloc));
-                    }
+                StatAlloc.collectStats(_gearStats, b.statAllocs, statBudget);
+            }
+        }            
+        RandomSuffix suffix = getSuffix();
+        if (suffix != null) {    
+            StatAlloc.collectStats(_gearStats, suffix.statAllocs, statBudget);
+            if (suffix.bonus != null && suffix.bonus.sockets != null) {
+                for (SocketT x: suffix.bonus.sockets) {
+                    _socket[newSockets++]._socket = x;
                 }
-            }            
-        }       
-        if (suffix != null && suffix.bonus != null && suffix.bonus.sockets != null) {
-            for (SocketT x: suffix.bonus.sockets) {
-                _socket[newSockets++]._socket = x;
             }
         }    
         /*if (_extraSocket > 1) {
@@ -656,7 +704,7 @@ public class PlayerSlot {
         
     }
     
-    public StatMap getGearStats() {
+    public StatMap getGearStats() { // don't mutate me bro! (rethink this..)
         return _gearStats;
     }
     
@@ -667,6 +715,9 @@ public class PlayerSlot {
         return _socketBonusSatisfied;
     }
     
+    public boolean isValid() {
+        return slotType != SlotT.OFF_HAND || !owner._bothHandsForMH;
+    }
     
     public boolean canExtraSocket() {
         return _item != null && (_item.extraSocket || (slotType == SlotT.WAIST && _itemLevelBase <= 600));
@@ -724,7 +775,7 @@ public class PlayerSlot {
         } else if (_item == null) {
             return true;
         }
-        return _namedBonusIndex == other._namedBonusIndex 
+        return _contextIndex == other._contextIndex 
             && _suffixIndex == other._suffixIndex;
     }
     public void copy(Player other, Consumer<PlayerError> errors) {
@@ -734,8 +785,8 @@ public class PlayerSlot {
         setItem(other._item);
         if (_item == null) return;
         _itemLevelCustom = other._itemLevelCustom;
-        _namedBonusIndex = other._namedBonusIndex;
-        _auxBonusIndex = other._auxBonusIndex;
+        _contextIndex = other._contextIndex;
+        _contextOptionIndex = other._contextOptionIndex;
         _suffixIndex = other._suffixIndex;
         _upgradeIndex = other._upgradeIndex;
         _extraSocket = other._extraSocket;
@@ -765,10 +816,10 @@ public class PlayerSlot {
         _itemLevelCustom = 0;
         _itemLevelBase = 0;
         _itemLevelActual = 0;
-        _namedBonusIndex = 0;
+        _contextIndex = 0;
         _extraSocket = false;
         _upgradeIndex = 0;
-        _auxBonusIndex = 0;
+        _contextOptionIndex = 0;
         _reqLevel = 0;
         _weaponDamage = 0;
         _baseArmor = 0;
@@ -816,7 +867,7 @@ public class PlayerSlot {
                     Wearable _socket;
     int _itemLevelCustom;
     final PlayerSocket[] _socket = new PlayerSocket[Player.MAX_SOCKETS];
-    int _namedBonusIndex;
+    int _contextIndex;
     int _suffixIndex;
     
     // computed

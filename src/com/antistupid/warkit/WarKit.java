@@ -43,7 +43,8 @@ import com.antistupid.warkit.items.Item;
 import com.antistupid.warkit.items.ItemBonus;
 import com.antistupid.warkit.items.ItemSet;
 import com.antistupid.warkit.items.BonusGroup;
-import com.antistupid.warkit.items.NamedItemBonus;
+import com.antistupid.warkit.items.ItemContext;
+import com.antistupid.warkit.items.ItemBonusCluster;
 import com.antistupid.warkit.items.ProfValue;
 import com.antistupid.warkit.items.SetBonus;
 import com.antistupid.warkit.items.Unique;
@@ -122,16 +123,14 @@ public class WarKit {
             return bonuses;
         }
         HashMap<Integer,ItemBonus> map = new HashMap<>();
-        if (item.namedBonusGroup != null) {
-            for (ItemBonus x: item.namedBonusGroup.components) {
-                map.put(x.id, x);
+        if (item.contexts != null) {
+            for (ItemContext ctx: item.contexts) {
+                for (ItemBonus x: ctx.components) {
+                    map.put(x.id, x);                    
+                }                
             }
         }
-        if (item.auxBonusGroup != null) {            
-            for (ItemBonus x: item.auxBonusGroup.components) {
-                map.put(x.id, x);
-            }
-        }
+        // fix me: suffixes?
         IntSet fixed = new IntSet();
         bonuses.forEach(id -> {
             ItemBonus b = map.get(id);
@@ -196,14 +195,15 @@ public class WarKit {
         TreeMap<Integer,RandomSuffix> suffixMap = new TreeMap<>();
         TreeMap<Integer,RandomSuffixGroup> suffixGroupMap = new TreeMap<>();
         TreeMap<Integer,ItemGroup> itemGroupMap = new TreeMap<>();
-        TreeMap<Integer,BonusGroup> auxGroupMap = new TreeMap<>();
-        TreeMap<Integer,BonusGroup> namedGroupMap = new TreeMap<>();
+        //TreeMap<Integer,BonusGroup> auxGroupMap = new TreeMap<>();
+        //TreeMap<Integer,BonusGroup> namedGroupMap = new TreeMap<>();
+        TreeMap<Integer,ItemContext[]> ctxMap = new TreeMap<>();
         
         // memo
-        TreeMap<SocketT[],SocketT[]> socketsMemo = new TreeMap<>(Misc.makeArrayComparator((a, b) -> Integer.compare(a.id, b.id)));     
+        TreeMap<SocketT[],SocketT[]> socketsMemo = new TreeMap<>(Misc.arrayComparator((a, b) -> Integer.compare(a.id, b.id)));     
         TreeMap<StatAlloc,StatAlloc> statAllocMemo = new TreeMap<>(StatAlloc::compare);     
-        TreeMap<StatAlloc[],StatAlloc[]> statAllocsMemo = new TreeMap<>(Misc.makeArrayComparator(StatAlloc::compare));     
-        //TreeMap<NamedItemBonus[],NamedItemBonus[]> namedBonusesMemo = new TreeMap<>(Misc.makeArrayComparator((a, b) -> ItemBonus.CMP_ARRAY.compare(a.components, b.components))); 
+        TreeMap<StatAlloc[],StatAlloc[]> statAllocsMemo = new TreeMap<>(Misc.arrayComparator(StatAlloc::compare));     
+        //TreeMap<NamedItemBonus[],ItemBonusCluster[]> namedBonusesMemo = new TreeMap<>(Misc.arrayComparator((a, b) -> ItemBonus.CMP_ARRAY.compare(a.components, b.components))); 
             
         try (DataInputStream in = new DataInputStream(new BufferedInputStream(Files.newInputStream(file)))) {
             int version = in.readInt();
@@ -215,8 +215,9 @@ public class WarKit {
             //int fileNameCount = in.readInt(); 
             //int nameDescCount = in.readInt(); 
             int itemBonusCount = in.readInt();
-            int namedGroupCount = in.readInt();
-            int auxGroupCount = in.readInt();
+            //int namedGroupCount = in.readInt();
+            //int auxGroupCount = in.readInt();
+            int contextGroupCount = in.readInt();
             int suffixCount = in.readInt();
             int suffixGroupCount = in.readInt();
             int itemGroupCount = in.readInt();
@@ -378,16 +379,78 @@ public class WarKit {
                 StatAlloc[] statAllocs = statAllocBuf.isEmpty() ? null : memo(statAllocsMemo, statAllocBuf.toArray(new StatAlloc[statAllocBuf.size()]));
                 ItemBonus b = new ItemBonus(id, itemLevelDelta, reqLevelDelta, quality, nameDesc, suffixName, sockets, statAllocs);
                 itemBonusMap.put(id, b);
-                //FlatItemBonus f = new NamedItemBonus(null, itemLevelDelta, reqLevelDelta, nameDescMap.get(nameDescId));                
+                //FlatItemBonus f = new ItemBonusCluster(null, itemLevelDelta, reqLevelDelta, nameDescMap.get(nameDescId));                
                 //flatItemBonusMap.put(id, f);
             }        
             // itemBonusMap.put(ItemBonus.IDENTITY.id, ItemBonus.IDENTITY); // hax?
              
+            for (int ctx = 0; ctx < contextGroupCount; ctx++) {
+                int id = in.readUnsignedByte();
+                int groupSize = in.readUnsignedByte();
+
+                ItemContext[] ctxs = new ItemContext[groupSize];                 
+                for (int i = 0; i < groupSize; i++) {
+                    String name = in.readUTF();
+                    String context = in.readUTF();
+                    ItemBonus[] defaultBonuses;
+                    int num = in.readUnsignedByte();
+                    ArrayList<ItemBonus> set = new ArrayList<>();
+                    defaultBonuses = new ItemBonus[num];
+                    for (int j = 0; j < num; j++) {
+                        ItemBonus b = itemBonusMap.get(in.readUnsignedShort());
+                        defaultBonuses[j] = b;
+                        set.add(b);
+                    }  
+                    num = in.readUnsignedByte();
+                    ItemBonus[][] m = new ItemBonus[num][];
+                    int p = 1;
+                    for (int j = 0; j < num; j++) {
+                        int n = in.readUnsignedByte();
+                        ItemBonus[] v = new ItemBonus[1 + n];
+                        for (int k = 0; k < n; k++) {
+                            ItemBonus b = itemBonusMap.get(in.readUnsignedShort());
+                            v[1 + k] = b;
+                            set.add(b);
+                        }
+                        m[j] = v;
+                        p *= v.length;
+                    }
+                    ArrayList<ItemBonusCluster> uni = new ArrayList<>(p);
+                    uni.add(ItemBonusCluster.NONE);
+                    ItemBonus[] v = new ItemBonus[num];
+                    for (int j = 0; j < p; j++) {
+                        int d = j;
+                        int n = 0;
+                        for (int k = 0; k < num; k++) {
+                            ItemBonus[] u = m[k];
+                            ItemBonus b = u[d % u.length];
+                            d /= u.length;
+                            if (b != null) {
+                                v[n++] = b;
+                            }                   
+                        }
+                        if (n > 0) {
+                            ItemBonusCluster b = mergeItemBonuses(null, Arrays.copyOf(v, n), statAllocsMemo, socketsMemo);                            
+                            uni.add(renameItemBonuses(b));
+                        }
+                    }            
+                    set.sort(ItemBonus.CMP_ID);
+                    uni.sort((a, b) -> ItemBonus.CMP_ARRAY.compare(a.components, b.components));    
+                                        
+                    ctxs[i] = new ItemContext(i, context, 
+                            mergeItemBonuses(name, defaultBonuses, statAllocsMemo, socketsMemo), 
+                            uni.toArray(new ItemBonusCluster[uni.size()]),
+                            set.toArray(new ItemBonus[set.size()])
+                    );                      
+                 }
+                 ctxMap.put(id, ctxs);
+            }
+            /*
             for (int i = 0; i < namedGroupCount; i++) {
                 int id = in.readUnsignedByte();
                 String name0 = in.readUTF();
                 int num = in.readUnsignedByte();
-                NamedItemBonus[] universe = new NamedItemBonus[num];
+                ItemBonusCluster[] universe = new ItemBonusCluster[num];
                 TreeMap<Integer,ItemBonus> map = new TreeMap<>();
                 int defaultIndex = 0;
                 for (int j = 0; j < num; j++) {
@@ -423,7 +486,7 @@ public class WarKit {
                     p *= v.length;
                 }
                 ArrayList<NamedItemBonus> uni = new ArrayList<>(p);
-                uni.add(NamedItemBonus.NONE);
+                uni.add(ItemBonusCluster.NONE);
                 ItemBonus[] v = new ItemBonus[num];
                 for (int j = 0; j < p; j++) {
                     int d = j;
@@ -444,8 +507,9 @@ public class WarKit {
                 uni.sort((a, b) -> ItemBonus.CMP_ARRAY.compare(a.components, b.components));
                 auxGroupMap.put(id, new BonusGroup(id, 
                         set.toArray(new ItemBonus[set.size()]),
-                        uni.toArray(new NamedItemBonus[uni.size()]), 0));                
+                        uni.toArray(new ItemBonusCluster[uni.size()]), 0));                
             }
+            */
             for (int i = 0; i < suffixCount; i++) {
                 int id = in.readShort();
                 String name = in.readUTF();
@@ -464,16 +528,21 @@ public class WarKit {
                         name = null;
                     }
                 }       
+                ItemBonus bonus = itemBonusMap.get(-id);
+                if (bonus != null) {
+                    statAllocs = bonus.statAllocs; // make it easier
+                }
                 suffixMap.put(id, new RandomSuffix(id, name, statAllocs, itemBonusMap.get(-id)));
             }
             for (int i = 0; i < suffixGroupCount; i++) {
                 int id = in.readShort();
-                int num = in.readUnsignedByte();
+                int num = in.readUnsignedShort();
                 RandomSuffix[] v = new RandomSuffix[num];
                 for (int j = 0; j < num; j++) {
                     v[j] = suffixMap.get((int)in.readShort()); // must exist
                 }
-                //Arrays.sort(v, (a, b) -> a.n);
+                //System.out.println(id  + ":"+ Arrays.toString(v));
+                Arrays.sort(v, RandomSuffix.CMP_POWER);
                 suffixGroupMap.put(id, new RandomSuffixGroup(id, v));
             }            
             for (int i = 0; i < itemGroupCount; i++) {
@@ -576,14 +645,14 @@ public class WarKit {
             
             
             /*
-            //itemBonusMap.put(0, new NamedItemBonus(0, 0, 0, null));
+            //itemBonusMap.put(0, new ItemBonusCluster(0, 0, 0, null));
             ArrayList<NamedItemBonus> itemBonusBuf = new ArrayList<>();
-            HashMap<ItemBonus,NamedItemBonus> namedSingleMap = new HashMap<>();
-            HashMap<Integer,NamedItemBonus> namedMixinMap = new HashMap<>();
-            HashMap<Integer,NamedItemBonus[]> namedDescMap = new HashMap<>();
+            HashMap<ItemBonus,ItemBonusCluster> namedSingleMap = new HashMap<>();
+            HashMap<Integer,ItemBonusCluster> namedMixinMap = new HashMap<>();
+            HashMap<Integer,ItemBonusCluster[]> namedDescMap = new HashMap<>();
             */
                     
-            //HashMap<Integer,NamedItemBonus> 
+            //HashMap<Integer,ItemBonusCluster> 
             int gemCount = 0;
             for (int index = 0; index < itemCount; index++) {
                 /*
@@ -698,11 +767,11 @@ public class WarKit {
                             }
                         }   
                         
-                        BonusGroup namedGroup = null;
+                        ItemContext[] contexts = null;
                         String nameDesc = null;
-                        int namedGroupId = in.readUnsignedByte();
-                        if (namedGroupId > 0) {                            
-                            namedGroup = namedGroupMap.get(namedGroupId); // must exist                         
+                        int contextsId = in.readUnsignedByte();
+                        if (contextsId > 0) {                            
+                            contexts = ctxMap.get(contextsId); // must exist                         
                         } else {
                             //int nameDescId = in.readUnsignedShort();                            
                             //nameDesc = nameDescMap.get(nameDescId);                            
@@ -716,13 +785,13 @@ public class WarKit {
                             if (nameDesc != null) {
                                 namedBonuses = namedDescMap.get(nameDescId);
                                 if (namedBonuses == null) {
-                                    namedBonuses = new NamedItemBonus[]{new NamedItemBonus(nameDesc)};
+                                    namedBonuses = new ItemBonusCluster[]{new ItemBonusCluster(nameDesc)};
                                     namedDescMap.put(nameDescId, namedBonuses);
                                 }                                                               
                             }*/
                         }
                         
-                        BonusGroup auxGroup = auxGroupMap.get(in.readUnsignedShort());                       
+                        //BonusGroup auxGroup = auxGroupMap.get(in.readUnsignedShort());                       
                         
                         ItemSet itemSet = itemSetMap.get(in.readUnsignedShort());
                         
@@ -756,7 +825,7 @@ public class WarKit {
                                     nameDesc, reqLevel, reqLevelMax, reqLevelCurveId, 
                                     statAllocs, sockets, socketBonus, 
                                     upgrade, pvpItemLevel,
-                                    suffixGroup, namedGroup, auxGroup,
+                                    suffixGroup, contexts,
                                     itemSet, group, groupIndex, spellIds, extraSocket,
                                     speed, range, caster, damageType);    
                         } else {
@@ -769,7 +838,7 @@ public class WarKit {
                                     nameDesc, reqLevel, reqLevelMax, reqLevelCurveId, 
                                     statAllocs, sockets, socketBonus,
                                     upgrade, pvpItemLevel,
-                                    suffixGroup, namedGroup, auxGroup,
+                                    suffixGroup, contexts,
                                     itemSet, group, groupIndex, spellIds, extraSocket);
                         }
                         break;
@@ -848,83 +917,66 @@ public class WarKit {
     }
     
 
-    static private NamedItemBonus mergeItemBonuses(String emptyName, ItemBonus[] v) {
+    static private ItemBonusCluster mergeItemBonuses(String name, ItemBonus[] v, TreeMap<StatAlloc[],StatAlloc[]> statAllocsMemo, TreeMap<SocketT[],SocketT[]> socketsMemo) {
         QualityT qualityMax = null;
         int itemLevelDelta = 0;
         int reqLevelDelta = 0;
-        ArrayList<String> names = new ArrayList<>();    
-        for (ItemBonus x: v) {
-            itemLevelDelta += x.itemLevelDelta;
-            reqLevelDelta += x.reqLevelDelta;
-            qualityMax = QualityT.max(qualityMax, x.quality);
-            if (x.nameDesc != null) {
-                names.add(x.nameDesc);
-            }  
-        }
-        String sep = " ";
-        if (names.isEmpty()) {
-            if (qualityMax != null) {
-                names.add(qualityMax.name);
-            }            
-            if (itemLevelDelta != 0) {
-                names.add(String.format("%+d Item Level", itemLevelDelta));
-            }
-            sep = " / ";
-        }
-        if (names.isEmpty()) {
-            names.add(emptyName);
-        }
-        String name = names.stream().collect(Collectors.joining(sep));
-        Arrays.sort(v, ItemBonus.CMP_ID);
-        return new NamedItemBonus(v, name, itemLevelDelta, reqLevelDelta, qualityMax);           
-    }
-    
-    static private NamedItemBonus mergeItemBonuses(ItemBonus[] v) {
-        QualityT qualityMax = null;
-        int itemLevelDelta = 0;
-        int reqLevelDelta = 0;
-        ArrayList<String> names = new ArrayList<>();    
-        for (ItemBonus x: v) {
-            itemLevelDelta += x.itemLevelDelta;
-            reqLevelDelta += x.reqLevelDelta;
-            qualityMax = QualityT.max(qualityMax, x.quality);
-            if (x.sockets != null) {
-                if (x.sockets.length == 1) {
-                    names.add(x.sockets[0].name);
-                } else {
-                    SocketT sameColor = x.sockets[0];
-                    for (int i = 1; i < x.sockets.length; i++) {
-                        if (x.sockets[i] != sameColor) {
-                            sameColor = null;
-                            break;
-                        }                                    
-                    }
-                    if (sameColor != null) {
-                        names.add(x.sockets.length + "x " + sameColor);                                    
-                    } else {
-                        names.add(Arrays.toString(x.sockets));
-                    }
+        //ArrayList<String> names = new ArrayList<>();    
+        ArrayList<SocketT> socketBuf = new ArrayList();
+        ArrayList<StatAlloc> statAllocBuf = new ArrayList<>();
+        for (ItemBonus b: v) {
+            itemLevelDelta += b.itemLevelDelta;
+            reqLevelDelta += b.reqLevelDelta;
+            qualityMax = QualityT.max(qualityMax, b.quality);            
+            if (b.sockets != null) {
+                for (SocketT x: b.sockets) {
+                    socketBuf.add(x);
                 }
             }
-            if (x.statAllocs != null) {
-                if (x.statAllocs.length == 1) {
-                    names.add(x.statAllocs[0].stat.name);
-                }                            
+            if (b.statAllocs != null) {
+                for (StatAlloc x: b.statAllocs) {
+                    statAllocBuf.add(x);
+                }
             }
         }
-        String sep = " + ";
-        if (names.isEmpty()) {
-            if (qualityMax != null) {
-                names.add(qualityMax.name);
-            }            
-            if (itemLevelDelta != 0) {
-                names.add(String.format("%+d Item Level", itemLevelDelta));
+        SocketT[] sockets = socketBuf.isEmpty() ? null : memo(socketsMemo, socketBuf.toArray(new SocketT[socketBuf.size()]));                
+        statAllocBuf.sort(StatAlloc::compare);
+        StatAlloc[] statAllocs = statAllocBuf.isEmpty() ? null : memo(statAllocsMemo, statAllocBuf.toArray(new StatAlloc[statAllocBuf.size()]));
+        Arrays.sort(v, ItemBonus.CMP_ID);
+        return new ItemBonusCluster(v, name, itemLevelDelta, reqLevelDelta, qualityMax, statAllocs, sockets);           
+    }
+    
+    static private ItemBonusCluster renameItemBonuses(ItemBonusCluster b) {
+        ArrayList<String> names = new ArrayList<>();    
+        if (b.sockets != null) {
+            if (b.sockets.length == 1) {
+                names.add(b.sockets[0].name);
+            } else {
+                SocketT sameColor = b.sockets[0];
+                for (int i = 1; i < b.sockets.length; i++) {
+                    if (b.sockets[i] != sameColor) {
+                        sameColor = null;
+                        break;
+                    }                                    
+                }
+                if (sameColor != null) {
+                    names.add(b.sockets.length + "x " + sameColor);                                    
+                } else {
+                    names.add(Arrays.toString(b.sockets));
+                }
             }
-            sep = " / ";
-        }        
-        String name = names.stream().collect(Collectors.joining(sep));
-        Arrays.sort(v, ItemBonus.CMP_ID);        
-        return new NamedItemBonus(v, name, itemLevelDelta, reqLevelDelta, qualityMax);              
+        }
+        if (b.statAllocs != null) {
+            if (b.statAllocs.length == 1) {
+                names.add(b.statAllocs[0].stat.name);
+            } else {                  
+                for (StatAlloc x: b.statAllocs) {
+                    names.add(x.stat.shortName);
+                }
+            } 
+        }     
+        String name = names.stream().collect(Collectors.joining(" + "));
+        return new ItemBonusCluster(b.components, name, b.itemLevelDelta, b.reqLevelDelta, b.quality, b.statAllocs, b.sockets);         
     }
     
     

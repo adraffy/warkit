@@ -33,6 +33,8 @@ public class PlayerModel {
     
     private final double[] ratingMod = new double[RatingT.db.size()];
     private final float[] ratingCoeff = new float[RatingT.db.size()];
+    
+    private double baseVersa;
     private double baseCrit;
     private double baseHaste;
     private double baseMastery;
@@ -60,17 +62,30 @@ public class PlayerModel {
     
     // -----
     
-    public double getCritPerc() {
+    public double getMovementSpeed() {
+        return 1 + getRatingPerc(RatingT.SPEED) + getStat(StatT.SPEED_PERC) * 0.01;
+    }
+    
+    public double getVersaDamageDonePerc() {
+        return baseVersa + getRatingPerc(RatingT.VERSA_DAMAGE_DONE);
+    }
+    
+    public double getVersaDamageTakenPerc() {
+        return baseVersa + getRatingPerc(RatingT.VERSA_DAMAGE_TAKEN);
+    }
+    
+    public double getCritChance() {
         return baseCrit + getRatingPerc(RatingT.CRIT);
     }
     
-    public double getHastePerc() {
+    public double getHasteMod() {
         return baseHaste + getRatingPerc(RatingT.HASTE);
     }
     
-    public double getMultiPerc() {
+    public double getMultiChance() {
         return baseMulti + getRatingPerc(RatingT.MULTI);
     }
+    
     
     public double getMasteryPerc() {
         return baseMastery + getRatingPerc(RatingT.MASTERY);
@@ -82,47 +97,60 @@ public class PlayerModel {
     }
     */
     
-    public double getMaximumHealth() {
-        return getStat(StatT.HP) + staminaCoeff * getStat(StatT.STA);
+    public int getMaximumHealth() {
+        return (int)(getStat(StatT.HP) + staminaCoeff * getStat(StatT.STA));
+    }
+    
+    public int getMaximumMana() {
+        return getStat(StatT.MP) + playerManaMax;
     }
     
     // ---- 
     
     public boolean nightTime;
     
-    public void setup(Player p, Consumer<String> errorSink) {
+    //private SpecT spec;
+    
+    public void setup(Player p) {
+        //spec = p.spec;
         Arrays.fill(statMod, 1);
         Arrays.fill(ratingMod, 1);
         for (RatingT x: RatingT.db.types) {
             ratingCoeff[x.index] = x.getCoeff(p.playerLevel);
         }
         baseStats.clear();
-        CompactBaseStats.collectStats(baseStats, p.race.compactBaseStats);
-        CompactBaseStats.collectStats(baseStats, p.spec.classType.getCompactBaseStats(p.playerLevel));
-        
-        if (p.hasArmorSpecialization()) {
-            statMod[p.spec.primaryStat.index] *= SpecT.ARMOR_SPECIALIZATION_COEFF;
-        }
-        if (p.playerLevel >= SpecT.PLAYER_LEVEL_ATTUNE_RATING) {
-            ratingMod[p.spec.attuneRating.index] *= SpecT.ATTUNE_RATING_COEFF;
-        }
-        
+        gearStats.clear();
         baseCritMod = 2;
         baseCrit = 0.05;
         baseHaste = 1;
         baseMulti = 0;
-        
+        baseVersa = 0;
         boolean hasMastery = p.playerLevel >= SpecT.PLAYER_LEVEL_MASTERY;        
-        baseMastery = hasMastery ? 0.08 : 0; // base mastery        
+        baseMastery = hasMastery ? 0.08 : 0; // base mastery   
+        
+        if (p.spec != null) {
+            CompactBaseStats.collectStats(baseStats, p.race.compactBaseStats);
+            CompactBaseStats.collectStats(baseStats, p.spec.classType.getCompactBaseStats(p.playerLevel));
 
-        if (p.spec.hasCritialStrikes()) {
-            baseCrit += 0.1;
+            if (p.hasArmorSpecialization()) {
+                statMod[p.spec.primaryStat.index] *= SpecT.ARMOR_SPECIALIZATION_COEFF;
+            }
+            if (p.playerLevel >= SpecT.PLAYER_LEVEL_ATTUNE_RATING) {
+                ratingMod[p.spec.attuneRating.index] *= SpecT.ATTUNE_RATING_COEFF;
+            }            
+            if (p.spec.hasCritialStrikes()) {
+                baseCrit += 0.1;
+            }            
+        }
+             
+        if (raidBuff_versa) {
+            baseVersa += 0.03;
         }
         if (raidBuff_crit) {
             baseCrit += 0.05;
         }
         if (raidBuff_haste) {
-            baseHaste += 0.05;
+            baseHaste *= 1.05;
         }        
         if (raidBuff_multi) {
             baseMulti += 0.05;
@@ -154,15 +182,16 @@ public class PlayerModel {
         } else if (p.race == RaceT.DWARF) {
             baseCritMod *= 1.02;
         } else if (p.race == RaceT.GNOME) {
-            baseHaste += 0.01;
+            baseHaste *= 1.01;
         } else if (p.race == RaceT.HUMAN) {
             baseStats.add(StatT.AGI, RaceT.getHuman_theHumanSpirit_versa(p.playerLevel));
         } else if (p.race == RaceT.NE) {
             if (nightTime) {
-                baseHaste += 0.01;
+                baseHaste *= 1.01;
             } else {
                 baseCrit += 0.01;
             }
+            baseStats.add(StatT.SPEED_PERC, 2);
         } else if (RaceT.isPandaren(p.race)) {
             // 2x well fed
         } else if (p.race == RaceT.WORGEN) {
@@ -176,19 +205,34 @@ public class PlayerModel {
 
         
         staminaCoeff = HealthCurve.get(p.playerLevel);
-        playerManaMax = ManaCurve.getHybrid(p.playerLevel);
+        playerManaMax = ManaCurve.get(p.playerLevel, p.spec);
 
         p.collectStats(gearStats);
         
+        
+        if (p.spec != null) {
+            if (p.spec.hasAttackPowerMasteryBonus()) {
+                statMod[StatT.AP.index] *= 1 + getMasteryPerc();
+            }
+            if (!p.spec.role.bonusArmor) {
+                gearStats.clear(StatT.ARMOR);
+            }
+            if (!p.spec.role.spirit) {
+                gearStats.clear(StatT.SPI);
+            }            
+        }
+        
+        /*
         System.out.println(baseStats);
         System.out.println(gearStats);
         
         System.out.println("Health: " + getMaximumHealth());
         System.out.println("Mana: " + getMaximumHealth());
-        System.out.println("Crit: " + getCritPerc() + " [" + getRating(RatingT.CRIT) + "] (" + ratingCoeff[RatingT.CRIT.index] + ")");
-        System.out.println("Multi: " + getMultiPerc() + " [" + getRating(RatingT.MULTI) + "] (" + ratingCoeff[RatingT.MULTI.index] + ")");
-        System.out.println("Haste: " + getHastePerc() + " [" + getRating(RatingT.HASTE) + "] (" + ratingCoeff[RatingT.HASTE.index] + ")");
+        System.out.println("Crit: " + getCritChance() + " [" + getRating(RatingT.CRIT) + "] (" + ratingCoeff[RatingT.CRIT.index] + ")");
+        System.out.println("Multi: " + getMultiChance() + " [" + getRating(RatingT.MULTI) + "] (" + ratingCoeff[RatingT.MULTI.index] + ")");
+        System.out.println("Haste: " + getHasteMod() + " [" + getRating(RatingT.HASTE) + "] (" + ratingCoeff[RatingT.HASTE.index] + ")");
         System.out.println("Mastery: " + getMasteryPerc() * p.spec.masteryCoeff + " [" + getRating(RatingT.MASTERY) + "] (" + ratingCoeff[RatingT.MASTERY.index] + ")");
+                */
     }
     
 }

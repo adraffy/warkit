@@ -295,6 +295,18 @@ public class Player {
         return true;
     }    
     
+    public double getAverageItemLevel() {
+        double sum = 0;
+        int num = 0;
+        for (PlayerSlot x: SLOT) {
+            if (x.slotType.bodyPart != SlotT.BODYPART_COSMETIC && x.isValid()) {
+                sum += x.getScaledItemLevel();
+                num++;
+            }
+        }
+        return sum / num;
+    }
+    
     public void validate() { validate(null, null); }
     public void validate(Player buf, Consumer<PlayerError> errors) {
         if (buf == null || buf == this) {
