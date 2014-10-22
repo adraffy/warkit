@@ -8,7 +8,11 @@ import com.antistupid.warbase.types.SocketT;
 
 public class ItemBonusCluster {
         
-    public final ItemBonus[] components; // never null
+    static public final Comparator<ItemBonusCluster> CMP_ITEM_LEVEL = (a, b) -> a.itemLevelDelta - b.itemLevelDelta;
+    
+    static public final ItemBonusCluster NONE = new ItemBonusCluster(new ItemBonus[0], "None", 0, 0, null, null, null);
+          
+    public final ItemBonus[] components; // never null, sorted by id
     public final String name;
     public final int itemLevelDelta;
     public final int reqLevelDelta;
@@ -26,14 +30,23 @@ public class ItemBonusCluster {
         this.sockets = sockets;
     }
     
-    static public final ItemBonusCluster NONE = new ItemBonusCluster(new ItemBonus[0], "None", 0, 0, null, null, null);
-          
+    public boolean containsBonus(int id) {
+        return findBonus(id) >= 0;
+    }
+    
+    public int findBonus(int id) {
+        for (int i = 0; i < components.length; i++) {
+            if (components[i].id == id) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    
     @Override
     public String toString() {
         return String.format("%s(%s,%d,%d,%s)%s", getClass().getSimpleName(), name, itemLevelDelta, reqLevelDelta, quality, Arrays.toString(components));
     }
-    
-    static public final Comparator<ItemBonusCluster> CMP_ITEM_LEVEL = (a, b) -> a.itemLevelDelta - b.itemLevelDelta;
     
     
 }

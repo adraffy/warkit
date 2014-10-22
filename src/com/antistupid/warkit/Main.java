@@ -5,6 +5,7 @@ import java.nio.file.Paths;
 import com.antistupid.warbase.types.EquipT;
 import com.antistupid.warbase.types.RegionT;
 import com.antistupid.warkit.armory.Armory;
+import com.antistupid.warkit.examples.BnetForum;
 import com.antistupid.warkit.player.Player;
 import com.antistupid.warkit.player.coders.CompactGear;
 import org.json.simple.JSONValue;
@@ -23,6 +24,11 @@ public class Main {
         
         if (false) {            
             wk.wearableMap.get(109759).dump();
+            return;
+        }
+        
+        if (true) {
+            BnetForum.exportContexts(wk, Paths.get("BnetForumItemContexts.json"));
             return;
         }
         

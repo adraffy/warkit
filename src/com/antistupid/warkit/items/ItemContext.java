@@ -18,7 +18,7 @@ public class ItemContext {
     
     public String getName() {
         return defaultBonus.name;
-    }
+    } 
     
     public int getOptionCount() {
         return optionalBonuses != null ? optionalBonuses.length : 0;

@@ -8,6 +8,7 @@ import com.antistupid.warbase.types.ProfT;
 import com.antistupid.warbase.types.QualityT;
 import com.antistupid.warbase.types.SocketT;
 import com.antistupid.warbase.types.TypeT;
+import java.util.function.Predicate;
 
 abstract public class Wearable<T extends TypeT> extends Item<T> {
  
@@ -91,6 +92,20 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
         return equip.twoHand;
     }
     
+    // find first exact match 
+    public int findContext(Predicate<ItemContext> test) {
+        if (contexts == null) {
+            return -1;
+        }
+        for (ItemContext ctx: contexts) {
+            if (test.test(ctx)) {
+                return ctx.index;
+            }
+        }
+        return -1;
+    } 
+    
+    // for debugging
     @Override
     public void appendTo(StringBuilder sb) {
         super.appendTo(sb);
