@@ -776,6 +776,8 @@ public class PlayerSlot {
     public float getWeaponDamage() {
         return _weaponDamage;
     }   
+    
+    
     /*
     public int getWeaponMillis() {
         return _item instanceof Weapon ? ((Weapon)_item).speed : 0;

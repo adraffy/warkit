@@ -8,6 +8,9 @@ import com.antistupid.warbase.types.RaceT;
 import com.antistupid.warbase.types.RatingT;
 import com.antistupid.warbase.types.SpecT;
 import com.antistupid.warbase.types.StatT;
+import com.antistupid.warbase.types.WeaponT;
+import com.antistupid.warkit.items.Weapon;
+import com.antistupid.warkit.items.Wearable;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
@@ -43,11 +46,16 @@ public class PlayerModel {
     
     private double staminaCoeff;
     
+    final Player player;
     
-    public PlayerModel() {
+    public PlayerModel(Player player) {
+        this.player = player;
     }
     
     public int getStat(StatT stat) {
+        if (stat == null) {
+            return 0;
+        }
         double mod = statMod[stat.index];
         return (int)(mod * baseStats.getEffective(stat)) + (int)(mod * gearStats.getEffective(stat));
     }
@@ -79,7 +87,7 @@ public class PlayerModel {
     }
     
     public double getHasteMod() {
-        return baseHaste + getRatingPerc(RatingT.HASTE);
+        return baseHaste * (1 + getRatingPerc(RatingT.HASTE));
     }
     
     public double getMultiChance() {
@@ -105,18 +113,42 @@ public class PlayerModel {
         return getStat(StatT.MP) + playerManaMax;
     }
     
+    public int getAP() {        
+        return getStat(StatT.AP) + getStat(apStat);
+    }
+    
+    public int getSP() {        
+        return getStat(StatT.SP) + getStat(StatT.INT) + getStat(spStat);
+    }
+    
+    public double getAttackSpeed_MH() {
+        return getAttackSpeed(player.MH._item);
+    }
+    public double getAttackSpeed_OH() {
+        return getAttackSpeed(player.OH._item);
+    }
+    
+    private double getAttackSpeed(Wearable item) {
+        return (item instanceof Weapon ? ((Weapon)item).speed : WeaponT.FIST_SPEED) / (1000D * getHasteMod());
+    }
+    
+    
+    
     // ---- 
     
-    public boolean nightTime;
+    public boolean nightTime = true;
     
     //private SpecT spec;
     
-    public void setup(Player p) {
+    private StatT apStat;
+    private StatT spStat;
+    
+    public void update() {
         //spec = p.spec;
         Arrays.fill(statMod, 1);
         Arrays.fill(ratingMod, 1);
         for (RatingT x: RatingT.db.types) {
-            ratingCoeff[x.index] = x.getCoeff(p.playerLevel);
+            ratingCoeff[x.index] = x.getCoeff(player.playerLevel);
         }
         baseStats.clear();
         gearStats.clear();
@@ -125,24 +157,30 @@ public class PlayerModel {
         baseHaste = 1;
         baseMulti = 0;
         baseVersa = 0;
-        boolean hasMastery = p.playerLevel >= SpecT.PLAYER_LEVEL_MASTERY;        
-        baseMastery = hasMastery ? 0.08 : 0; // base mastery   
-        
-        if (p.spec != null) {
-            CompactBaseStats.collectStats(baseStats, p.race.compactBaseStats);
-            CompactBaseStats.collectStats(baseStats, p.spec.classType.getCompactBaseStats(p.playerLevel));
-
-            if (p.hasArmorSpecialization()) {
-                statMod[p.spec.primaryStat.index] *= SpecT.ARMOR_SPECIALIZATION_COEFF;
+        boolean hasMastery = player.playerLevel >= SpecT.PLAYER_LEVEL_MASTERY;        
+        baseMastery = hasMastery ? 0.08 : 0; // base mastery           
+        apStat = StatT.STR;
+        spStat = null;
+        if (player.spec != null) {
+            CompactBaseStats.collectStats(baseStats, player.race.compactBaseStats);
+            CompactBaseStats.collectStats(baseStats, player.spec.classType.getCompactBaseStats(player.playerLevel));
+            if (player.spec.primaryStat != StatT.INT) {
+                apStat = player.spec.primaryStat;
+                if (player.spec.manaHybrid) {
+                    // this is wrong for feral/guardian
+                    spStat = player.spec.primaryStat;
+                }  
+            }          
+            if (player.hasArmorSpecialization()) {
+                statMod[player.spec.primaryStat.index] *= SpecT.ARMOR_SPECIALIZATION_COEFF;
             }
-            if (p.playerLevel >= SpecT.PLAYER_LEVEL_ATTUNE_RATING) {
-                ratingMod[p.spec.attuneRating.index] *= SpecT.ATTUNE_RATING_COEFF;
+            if (player.playerLevel >= SpecT.PLAYER_LEVEL_ATTUNE_RATING) {
+                ratingMod[player.spec.attuneRating.index] *= SpecT.ATTUNE_RATING_COEFF;
             }            
-            if (p.spec.hasCritialStrikes()) {
+            if (player.spec.hasCritialStrikes()) {
                 baseCrit += 0.1;
             }            
         }
-             
         if (raidBuff_versa) {
             baseVersa += 0.03;
         }
@@ -174,50 +212,50 @@ public class PlayerModel {
             statMod[StatT.INT.index] *= coeff;
         }
 
-        if (p.race == RaceT.DRAENEI) {
-            int value = RaceT.getDraenei_heroicPresence_agiIntStr(p.playerLevel);
+        if (player.race == RaceT.DRAENEI) {
+            int value = RaceT.getDraenei_heroicPresence_agiIntStr(player.playerLevel);
             baseStats.add(StatT.AGI, value);
             baseStats.add(StatT.INT, value);
             baseStats.add(StatT.STR, value);                
-        } else if (p.race == RaceT.DWARF) {
+        } else if (player.race == RaceT.DWARF) {
             baseCritMod *= 1.02;
-        } else if (p.race == RaceT.GNOME) {
+        } else if (player.race == RaceT.GNOME) {
             baseHaste *= 1.01;
-        } else if (p.race == RaceT.HUMAN) {
-            baseStats.add(StatT.AGI, RaceT.getHuman_theHumanSpirit_versa(p.playerLevel));
-        } else if (p.race == RaceT.NE) {
+        } else if (player.race == RaceT.HUMAN) {
+            baseStats.add(StatT.AGI, RaceT.getHuman_theHumanSpirit_versa(player.playerLevel));
+        } else if (player.race == RaceT.NE) {
             if (nightTime) {
                 baseHaste *= 1.01;
             } else {
                 baseCrit += 0.01;
             }
             baseStats.add(StatT.SPEED_PERC, 2);
-        } else if (RaceT.isPandaren(p.race)) {
+        } else if (RaceT.isPandaren(player.race)) {
             // 2x well fed
-        } else if (p.race == RaceT.WORGEN) {
+        } else if (player.race == RaceT.WORGEN) {
             baseCrit += 0.01;
-        } else if (p.race == RaceT.BE) {
+        } else if (player.race == RaceT.BE) {
             baseCrit += 0.01;
-        } else if (p.race == RaceT.TAUREN) {
+        } else if (player.race == RaceT.TAUREN) {
             baseCritMod *= 1.02;
-            baseStats.add(StatT.STA, RaceT.getTauren_endurance_sta(p.playerLevel));
+            baseStats.add(StatT.STA, RaceT.getTauren_endurance_sta(player.playerLevel));
         }
 
         
-        staminaCoeff = HealthCurve.get(p.playerLevel);
-        playerManaMax = ManaCurve.get(p.playerLevel, p.spec);
+        staminaCoeff = HealthCurve.get(player.playerLevel);
+        playerManaMax = ManaCurve.get(player.playerLevel, player.spec);
 
-        p.collectStats(gearStats);
+        player.collectStats(gearStats);
         
         
-        if (p.spec != null) {
-            if (p.spec.hasAttackPowerMasteryBonus()) {
+        if (player.spec != null) {
+            if (player.spec.hasAttackPowerMasteryBonus()) {
                 statMod[StatT.AP.index] *= 1 + getMasteryPerc();
             }
-            if (!p.spec.role.bonusArmor) {
+            if (!player.spec.role.bonusArmor) {
                 gearStats.clear(StatT.ARMOR);
             }
-            if (!p.spec.role.spirit) {
+            if (!player.spec.role.spirit) {
                 gearStats.clear(StatT.SPI);
             }            
         }

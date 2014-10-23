@@ -89,7 +89,7 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
     }
     
     public boolean isTwoHand() {
-        return equip.twoHand;
+        return equip.twoHand; // not true in general, check subclass
     }
     
     // find first exact match 
