@@ -18,7 +18,7 @@ import com.antistupid.warbase.HttpCache.Result;
 import com.antistupid.warbase.IntSet;
 import com.antistupid.warkit.JSONHelp;
 import com.antistupid.warkit.WarKit;
-import com.antistupid.warkit.items.AbstractEnchant;
+import com.antistupid.warkit.items.ItemEnchant;
 import com.antistupid.warkit.items.Gem;
 import com.antistupid.warkit.items.Wearable;
 import com.antistupid.warkit.player.Player;
@@ -481,7 +481,7 @@ public class Armory {
             }
             int enchantId = JSONHelp.getInt(paramMap, "enchant", 0);
             if (enchantId != 0) {                                    
-                AbstractEnchant enchant = wk.findEnchant(item, enchantId);
+                ItemEnchant enchant = wk.findEnchant(item, enchantId);
                 if (enchant != null) {    
                     try {
                         slot.setEnchant(enchant);

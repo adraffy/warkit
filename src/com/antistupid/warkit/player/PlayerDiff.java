@@ -5,13 +5,11 @@ import java.util.Collection;
 import com.antistupid.warkit.items.RandomSuffix;
 import com.antistupid.warbase.stats.StatMap;
 import com.antistupid.warbase.utils.StringBuilderHelp;
-import com.antistupid.warbase.types.ClassT;
 import com.antistupid.warbase.types.RaceT;
 import com.antistupid.warbase.types.SlotT;
 import com.antistupid.warbase.types.SpecT;
 import com.antistupid.warbase.types.StatT;
-import com.antistupid.warkit.items.AbstractEnchant;
-import com.antistupid.warkit.items.Gem;
+import com.antistupid.warkit.items.ItemEnchant;
 import com.antistupid.warkit.items.Wearable;
 import com.antistupid.warkit.player.coders.CompactGear;
 
@@ -69,8 +67,8 @@ public class PlayerDiff {
             return ((StatMap)obj).toString_noBracket(true); // this has brackets :|
         } else if (obj instanceof RandomSuffix) {
             return ((RandomSuffix)obj).name;
-        } else if (obj instanceof AbstractEnchant) {
-            return ((AbstractEnchant)obj).name;
+        } else if (obj instanceof ItemEnchant) {
+            return ((ItemEnchant)obj).name;
         } else if (obj instanceof SpecT) {
             return ((SpecT)obj).fullName;
         } else if (obj instanceof RaceT) {

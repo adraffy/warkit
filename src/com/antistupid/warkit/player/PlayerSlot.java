@@ -20,15 +20,15 @@ import com.antistupid.warbase.types.SocketT;
 import com.antistupid.warbase.types.SpecT;
 import com.antistupid.warbase.types.StatT;
 import com.antistupid.warbase.types.WeaponT;
-import com.antistupid.warkit.items.AbstractEnchant;
+import com.antistupid.warkit.items.ItemEnchant;
 import com.antistupid.warkit.items.Armor;
 import com.antistupid.warkit.items.Enchantment;
 import com.antistupid.warkit.items.Gem;
 import com.antistupid.warkit.items.Item;
 import com.antistupid.warkit.items.ItemBonus;
-import com.antistupid.warkit.items.BonusGroup;
 import com.antistupid.warkit.items.ItemContext;
 import com.antistupid.warkit.items.ItemBonusCluster;
+import com.antistupid.warkit.items.ItemSet;
 import com.antistupid.warkit.items.Unique;
 import com.antistupid.warkit.items.UpgradeChain;
 import com.antistupid.warkit.items.Weapon;
@@ -69,7 +69,7 @@ public class PlayerSlot {
     int _suffixIndex;
     int _upgradeIndex;
     boolean _extraSocket;
-    AbstractEnchant _enchant;
+    ItemEnchant _enchant;
     
     // computed
     int _socketCount;
@@ -146,7 +146,7 @@ public class PlayerSlot {
         // fix me: remember more stuff
         Wearable oldItem = _item;
         int upgradeIndex = _upgradeIndex;
-        AbstractEnchant enchant = _enchant;
+        ItemEnchant enchant = _enchant;
         boolean extraSocket = _extraSocket;
         Gem[] gems = copyGems();
         setItem(item); // warning: can fail
@@ -167,6 +167,8 @@ public class PlayerSlot {
             }
         }        
     }
+    
+    
     public void setItem(Item item) {
         if (item == null) {            
             clear();          
@@ -201,9 +203,9 @@ public class PlayerSlot {
                     }
                 }
             } else if (slotType == SlotT.OFF_HAND && owner._bothHandsForMH && !isTitanGrippable(w)) {
-                // we're trying to set our offhand
+                // we're trying to itemSet our offhand
                 // but we have a 2hander active
-                // so kill the 2h, so we can set the offhand
+                // so kill the 2h, so we can itemSet the offhand
                 owner.MH.clear();
             }   
         } else {
@@ -387,11 +389,31 @@ public class PlayerSlot {
         }
         if (index < 0 || index >= _item.contexts.length) {
             throw new PlayerError.EquipSlot(this, _item, "Invalid Context Index: " + index);
+        }        
+        if (index == _contextIndex) {
+            return; // no change
         }
-        
-        _contextIndex = index;   
-        
-        _contextOptionIndex = 0; // can we coerce this?       
+        ItemBonusCluster[] bonuses = _item.contexts[_contextIndex].optionalBonuses;
+        IntSet old = null;
+        if (bonuses != null) {
+            old = new IntSet();
+            for (ItemBonus x: bonuses[_contextOptionIndex].components) {
+                old.add(x.id);
+            }
+        }        
+        _contextIndex = index;           
+        _contextOptionIndex = 0; // can we coerce this?   
+        if (old != null) { // try #1
+            bonuses = _item.contexts[index].optionalBonuses;            
+            double bestScore = ItemBonus.score(bonuses[0].components, old);
+            for (int i = 1; i < bonuses.length; i++) {
+                double score = ItemBonus.score(bonuses[i].components, old);
+                if (score > bestScore) {
+                    bestScore = score;
+                    _contextOptionIndex = i;
+                }
+            }
+        }
         update();       
         //setExtraSocket(_extraSocket && canExtraSocket());  // why is this here   
     }
@@ -448,16 +470,16 @@ public class PlayerSlot {
         
         /*if (_item.namedBonusGroup != null) {     
             for (ItemBonus x: _item.namedBonusGroup.universe[_contextIndex].components) {
-                set.add(x.id);
+                itemSet.add(x.id);
             }
         }
         if (_item.auxBonusGroup != null) {
             for (ItemBonus x: _item.auxBonusGroup.universe[_contextOptionIndex].components) {
-                set.add(x.id);
+                itemSet.add(x.id);
             }            
         }*/
     }    
-    // warning: mutates set, leaves unused bonuses
+    // warning: mutates itemSet, leaves unused bonuses
     public void setItemBonuses(IntSet set) {
         if (_item == null) {
             if (set != null && !set.isEmpty()) {
@@ -502,30 +524,30 @@ public class PlayerSlot {
         if (_item.namedBonusGroup != null) {                        
             int bestIndex = 0;
             ItemBonusCluster[] v = _item.namedBonusGroup.universe;
-            double bestScore = ItemBonus.score(v[0].components, set);
+            double bestScore = ItemBonus.score(v[0].components, itemSet);
             for (int i = 1; i < v.length; i++) {
-                double score = ItemBonus.score(v[i].components, set);
+                double score = ItemBonus.score(v[i].components, itemSet);
                 if (score > bestScore) {
                     bestScore = score;
                     bestIndex = i;
                 }
             }     
             _contextIndex = bestIndex;            
-            ItemBonus.remove(v[bestIndex].components, set);
+            ItemBonus.remove(v[bestIndex].components, itemSet);
         }
         if (_item.auxBonusGroup != null) {
             int bestIndex = 0;
             ItemBonusCluster[] v = _item.auxBonusGroup.universe;
-            double bestScore = ItemBonus.score(v[0].components, set);
+            double bestScore = ItemBonus.score(v[0].components, itemSet);
             for (int i = 1; i < v.length; i++) {
-                double score =  ItemBonus.score(v[i].components, set);
+                double score =  ItemBonus.score(v[i].components, itemSet);
                 if (score > bestScore) {
                     bestScore = score;
                     bestIndex = i;
                 }
             }                
             _contextOptionIndex = bestIndex;
-            ItemBonus.remove(v[bestIndex].components, set);
+            ItemBonus.remove(v[bestIndex].components, itemSet);
         }    
         */
         update();    
@@ -535,12 +557,12 @@ public class PlayerSlot {
         return _reqLevel;
     }
     
-    public AbstractEnchant getEnchant() {
+    public ItemEnchant getEnchant() {
         return _enchant;
     }
-    //public boolean canEnchant(AbstractEnchant enchant)
+    //public boolean canEnchant(ItemEnchant enchant)
     
-    public void setEnchant(AbstractEnchant enchant) {
+    public void setEnchant(ItemEnchant enchant) {
         if (enchant == null) {
             _enchant = null;
             return;
@@ -611,7 +633,7 @@ public class PlayerSlot {
             Armor a = (Armor)_item;
             _baseArmor = ArmorCurve.get(ilvl, _quality, a.type, _item.equip);  
             _weaponDamage = 0;
-        } else { //if (_socket instanceof Weapon) {
+        } else { //if (_socketType instanceof Weapon) {
             Weapon w = (Weapon)_item;
             _weaponDamage = DamageCurve.get(ilvl, _quality, w.equip, w.type, w.caster);            
             _baseArmor = 0;            
@@ -620,13 +642,13 @@ public class PlayerSlot {
         int newSockets = 0;
         if (_item.sockets != null) {
             for (SocketT x: _item.sockets) {
-                _socket[newSockets++]._socket = x;
+                _socket[newSockets++]._socketType = x;
             }
         }
         if (ctx != null) {
             if (ctx.defaultBonus.sockets != null) {
                 for (SocketT x: ctx.defaultBonus.sockets) {
-                    _socket[newSockets++]._socket = x;
+                    _socket[newSockets++]._socketType = x;
                 }
             }
             StatAlloc.collectStats(_gearStats, ctx.defaultBonus.statAllocs, statBudget);
@@ -634,7 +656,7 @@ public class PlayerSlot {
                 ItemBonusCluster b = ctx.optionalBonuses[_contextOptionIndex];                
                 if (b.sockets != null) {
                     for (SocketT x: b.sockets) {
-                        _socket[newSockets++]._socket = x;
+                        _socket[newSockets++]._socketType = x;
                     }
                 }
                 StatAlloc.collectStats(_gearStats, b.statAllocs, statBudget);
@@ -645,7 +667,7 @@ public class PlayerSlot {
             StatAlloc.collectStats(_gearStats, suffix.statAllocs, statBudget);
             if (suffix.bonus != null && suffix.bonus.sockets != null) {
                 for (SocketT x: suffix.bonus.sockets) {
-                    _socket[newSockets++]._socket = x;
+                    _socket[newSockets++]._socketType = x;
                 }
             }
         }    
@@ -656,13 +678,13 @@ public class PlayerSlot {
         // gear > bonuses? > extra 
         // it probably doesn't happen
         if (_extraSocket) {
-            _socket[newSockets++]._socket = SocketT.PRISMATIC;
+            _socket[newSockets++]._socketType = SocketT.PRISMATIC;
         }        
         // the socket types could of changed
         // we may need to check that gems can still fit  :|        
         for (int i = newSockets; i < oldSockets; i++) {
             _socket[i].clear();
-            _socket[i]._socket = null;
+            _socket[i]._socketType = null;
         }  
         for (int i = 0; i < newSockets; i++) {
             _socket[i].update();
@@ -675,7 +697,7 @@ public class PlayerSlot {
         _socketBonusStats.clear();
         Enchantment bonus = _item.socketBonus;
         if (bonus != null) {
-            // _socket namedBonuses are only stats
+            // _socketType namedBonuses are only stats
             // never _prof requirement
             _socketBonusSatisfied = true;
             for (int i = 0; i < _item.sockets.length; i++) {
@@ -684,10 +706,11 @@ public class PlayerSlot {
                     break;
                 }
             }         
-            int lvl = Math.min(owner.playerLevel, bonus.scalingLevelMax);  
+            int lvl = PlayerScaling.max(bonus.scalingLevelMax, owner.playerLevel);  
             int min = bonus.scalingLevelMin;
             float scaling = PlayerScaling.get(Math.max(min, lvl), bonus.scalingId);
-            if (bonus.scalingPerLevel > 0 && lvl > min) {                
+            if (bonus.scalingPerLevel > 0 && lvl > min) {              
+                // i dont think this is necessary
                 scaling *= (min + bonus.scalingPerLevel * (lvl - min)) / lvl;                
             }            
             for (StatAlloc x: bonus.statAllocs) {
@@ -697,7 +720,7 @@ public class PlayerSlot {
                 }
                 int value = (int)(0.5 + scaling * x.mod);
                 _socketBonusStats.add(x.stat, value);
-            }           
+            } 
         } else {            
             _socketBonusSatisfied = false;
         }
@@ -844,7 +867,7 @@ public class PlayerSlot {
         System.out.println("Name: " + getItemName(true, true, false));
         System.out.println("Armor: " + getTotalArmor());
         System.out.println("GearStats: " + _gearStats);
-        System.out.println("Sockets: " + getSocketDescription());
+        System.out.println("Sockets: " + Arrays.toString(getSockets()));
         System.out.println("SocketBonus: " + _socketBonusStats);
        
         if (_item instanceof Weapon) {
@@ -864,9 +887,9 @@ public class PlayerSlot {
         }
         
         /*
-                    Wearable _socket;
+                    Wearable _socketType;
     int _itemLevelCustom;
-    final PlayerSocket[] _socket = new PlayerSocket[Player.MAX_SOCKETS];
+    final PlayerSocket[] _socketType = new PlayerSocket[Player.MAX_SOCKETS];
     int _contextIndex;
     int _suffixIndex;
     
@@ -888,6 +911,9 @@ public class PlayerSlot {
     public int getItemId() {
         return _item == null ? 0 : _item.itemId;
     }
+    public ItemSet getItemSet() {
+        return _item == null ? null : _item.itemSet;
+    }
     public String getItemIcon() {
         return _item == null ? null : _item.icon;
     }
@@ -899,12 +925,10 @@ public class PlayerSlot {
             sb.append(") ");
         }        
         boolean custom = isItemLevelCustom();
-        sb.append("[");
+        sb.append(custom ? "{" : "[");
         sb.append(getActualItemLevel());
-        if (custom) {
-            sb.append("!");
-        }
-        sb.append("] ");
+        sb.append(custom ? "}" : "]");
+        sb.append(" ");
         sb.append(_item.name);
         if (suffix && _item.suffixGroup != null) {
             sb.append(" ");
@@ -931,17 +955,12 @@ public class PlayerSlot {
         return sb.toString();
     }
     
-    public String getSocketDescription() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
+    public SocketT[] getSockets() {
+        SocketT[] v = new SocketT[_socketCount];
         for (int i = 0; i < _socketCount; i++) {
-            if (sb.length() > 1) {
-                sb.append(", ");
-            }
-            sb.append(_socket[i]._socket);
-        }        
-        sb.append("]");
-        return sb.toString();
+            v[i] = _socket[i]._socketType;
+        }
+        return v;
     }
 
     

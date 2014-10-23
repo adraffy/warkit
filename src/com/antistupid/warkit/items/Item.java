@@ -9,11 +9,11 @@ import com.antistupid.warbase.types.TypeT;
 
 abstract public class Item<T extends TypeT> {
     
-    static public final Comparator<Item> CMP_ITEM_LEVEL = (a, b) -> a.itemLevel - b.itemLevel;
+    static public final Comparator<Item> CMP_ITEM_LEVEL_AZ = (a, b) -> Integer.compare(a.itemLevel, b.itemLevel);
     
-    static public final Comparator<Item> CMP_ITEM_POWER = (a, b) -> {
-        int c = b.itemLevel - a.itemLevel;
-        return c != 0 ? c : b.quality.id - a.quality.id;
+    static public final Comparator<Item> CMP_ITEM_POWER_ZA = (a, b) -> {
+        int c = Integer.compare(b.itemLevel, a.itemLevel);
+        return c != 0 ? c : Integer.compare(b.quality.id, a.quality.id);
     };
 
     public final int itemId;

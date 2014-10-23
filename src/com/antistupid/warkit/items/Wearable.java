@@ -45,7 +45,7 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
     public final ItemContext[] contexts;
     public final Wearable[] itemGroup;
     public final int groupIndex;
-    public final ItemSet set;
+    public final ItemSet itemSet;
     public final boolean extraSocket;
     public final int[] itemSpells;
     
@@ -81,7 +81,7 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
         //this.namedBonusGroup = namedGroup;
         //this.auxBonusGroup = auxGroup;
         this.contexts = contexts;
-        this.set = set;
+        this.itemSet = set;
         this.itemGroup = group;
         this.groupIndex = groupIndex;
         this.extraSocket = extraSocket;
@@ -117,7 +117,10 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
             }
         }
         sb.append("Sockets: ").append(Arrays.toString(sockets)).append("\n");
-        sb.append("SocketBonus: ").append(socketBonus).append("\n");
+        if (socketBonus != null) {
+            sb.append("SocketBonus: ").append(socketBonus).append("\n");
+            socketBonus.dump();
+        }    
         sb.append("Upgrade: ").append(upgrade).append("\n");
         sb.append("PvPItemLevel: ").append(pvpItemLevelDelta).append("\n");
         if (suffixGroup != null) {
@@ -161,11 +164,11 @@ abstract public class Wearable<T extends TypeT> extends Item<T> {
                 sb.append("\n");
             }   
         }
-        sb.append("ItemSet: ").append(set).append("\n");
-        if (set != null) {
-           for (int i = 0; i < set.specs.length; i++) {
-               sb.append("+ ").append(set.specs[i]).append(" (").append(set.bonuses[i].length).append(")\n");
-               for (SetBonus x: set.bonuses[i]) {
+        sb.append("ItemSet: ").append(itemSet).append("\n");
+        if (itemSet != null) {
+           for (int i = 0; i < itemSet.specs.length; i++) {
+               sb.append("+ ").append(itemSet.specs[i]).append(" (").append(itemSet.bonuses[i].length).append(")\n");
+               for (SetBonus x: itemSet.bonuses[i]) {
                    sb.append(" ").append(x.index + 1).append(". ").append(x).append(": ").append(x.desc).append("\n");                   
                }
            }

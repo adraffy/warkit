@@ -10,23 +10,28 @@ WarKit is a single-jar library + external database file for Warlords of Draenor 
 4. make sure WKDB.dat is accessible from your application
 
 ####Random Code Examples
+#####Armory Import
 ```java
 // load warkit
 WarKit wk = WarKit.load();
 
 // create an armory 
-Armory a = new Armory(wk, new HttpCache());
+Armory a = new Armory(wk, new HttpCache(), "insert-api-key");
 
 // get realm list for US
 a.getRealmList(RegionT.US).forEach(System.out::println);
 
 // find all Druids named "Edgy" on US
-a.findPlayers("Fdgy", RegionT.US, 0, (name, realmName, realmSlug, level, race, cls) -> cls == ClassT.DRUID);
+Predicate<ArmorySearchResult> test = (name, realmName, realmSlug, level, race, male, cls, guild) -> {
+	return cls == ClassT.DRUID;
+};
+a.findPlayers("Edgy", RegionT.US, 0, test);
 
 // import "Edgy/Suramar" from US Armory
-Player p = a.getPlayer("Edgy", "Suramar", RegionT.US, false, System.out::println);
-
-// and then change the gear a bit:
+Player p = a.getPlayer("Edgy", "Suramar", RegionT.US, 0, false, System.out::println);
+```
+#####Gear Manipulation
+```java
 p.HEAD.clear();
 p.FEET.clearGems(); 
 p.NECK.setUpgradeLevel(4); 
@@ -37,36 +42,44 @@ p.T2.setUpgradeLevelMax();
 p.T1.setExtraSocket(true);
 p.HANDS.setItem(wk.wearableMap.get(23456));
 p.getProf(0).setProf(ProfT.BS, 699);
-p.SHOULDERS.setNamedItemBonusIndex(2);
-p.SHOULDERS.setRandomSuffixIndex(3);
-p.SHOULDERS.setAuxItemBonusIndex(7);
+p.SHOULDERS.setContextIndex(2);
+p.SHOULDERS.setContextChanceIndex(3);
 
 // most changes are dynamic, but some require manual validation
 p.playerLevel = 90; 
 p.spec = SpecT.GUARDIAN; // change spec
 p.scaledItemLevel = -463; // global scaling (challenge mode)
 p.validate();
-
+```
+#####Item Information
+```java
 // query some item information
-Wearable w = wk.wearableMap.get(61931); 
+Wearable w = wk.wearableMap.get(12345); 
 w.extraSocket; // boolean, true if supports extra socket (eg. eye of black prince)
-w.namedBonusGroup; // universe of bonus ids that alter the name desc
-w.auxBonusGroup; // universe of bonus ids that alter other stuff
+w.contexts; // universe of contexts (contains default and chance bonuses)
 w.suffixGroup; // unvierse of suffixes
 w.itemGroup; // universe of similar items
-w.set; // set bonuses, etc.
+w.itemSet; // set bonuses, etc.
 w.unique; // unique group
 w.statAllocs; // stat allocation distribution
 w.socketBonus; // socket bonus enchantment
 w.upgradeChain; // sequence of upgrades
 
+// query some gem information
+Gem g = wk.getMap.get(12345);
+g.reqItemLevel; // required item level
+```
+#####Gear Differences
+```java
 // load to characters and diff them
 Player p1 = ...
 Player p2 = ...
 PlayerDiff diff = PlayerDiff.compare(p1, p2);
 System.out.println(diff.title);
 System.out.println(diff.text);
-
+```
+#####Gear Import/Export
+```java
 // import from compact gear string
 Player p = CompactGear.fromString(wk, "12345\n56789 :12345 $4125");
 
@@ -78,21 +91,28 @@ Player p = SimcProfile.fromString(wk, "hands=bigswordofthebear,id=12345");
 
 // export to simc profile string
 String code = SimcProfile.toString(p);
+```
+#####URL Access
+```java
+// armory website url
+a.getArmoryURL("Edgy", "Suramar", RegionT.US);
 
-// launch armory website
-a.visitArmory("Fdgy", "Suramar", RegionT.US);
+// wow progress website url
+a.getWowProgressURL("Edgy", "Suramar", RegionT.US);
 
-// launch wow progress website
-a.visitWowProgress("Fdgy", "Suramar", RegionT.US);
+// warcraft logs website url
+a.getWarcraftLogsURL("Edgy", "Suramar", RegionT.US);
 
 // launch wow database site
 Player p = ...
-ExternalWebsite www = ExternalWebsite.WH; // wowhead
+ExternalWebsite www = ExternalWebsite.WOWHEAD; // wowhead
 www.show(p.FEET.getItem()); // show item
 www.show(p.HANDS.getEnchant()); // show spell
 www.show(p.CHEST.getItemSet()); // show item set
-
-// tally stats
+```
+#####Stats
+```java
+// tally stats from player gear/race/class
 Player p = ...
 StatMap stats = new StatMap();
 CompactBaseStats.collectStats(stats, p.race.compactBaseStats); // race stats
@@ -107,5 +127,3 @@ I'm using WarKit as the backend for my WoD universal paper doll application **Ap
 I'm also using WarKit as the backend for my WoD Feral simulator **Catus**. 
 
 You can find out more about WarKit, WarBase, WarDBC, Apparatus, Catus, and others at the [Fluid Druid forums](http://fluiddruid.net/forum/viewtopic.php?f=3&t=4574).
-
-

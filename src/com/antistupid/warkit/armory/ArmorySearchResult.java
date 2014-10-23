@@ -31,12 +31,12 @@ public class ArmorySearchResult {
         return name + ":" + realmName + ":" + realmSlug + ":" + level + ":" + race + ":" + cls + ":" + guild;
     }
     
-    static public final Comparator<ArmorySearchResult> CMP_LEVEL_CLASS = (a, b) -> {
+    static public final Comparator<ArmorySearchResult> CMP_levelZA_classAZ = (a, b) -> {
         int c = Integer.compare(b.level, a.level);
         return c == 0 ? Integer.compare(a.cls.index, b.cls.index) : c;
     };
     
-    static public final Comparator<ArmorySearchResult> CMP_CLASS_LEVEL = (a, b) -> {
+    static public final Comparator<ArmorySearchResult> CMP_classAZ_levelZA = (a, b) -> {
         int c = Integer.compare(a.cls.index, b.cls.index);
         return c == 0 ? Integer.compare(b.level, a.level) : c;
     };

@@ -4,7 +4,7 @@ import com.antistupid.warbase.data.ItemStatCurve;
 import com.antistupid.warbase.stats.StatMap;
 import com.antistupid.warbase.structs.StatAlloc;
 import com.antistupid.warbase.types.QualityT;
-import com.antistupid.warbase.utils.Misc;
+import com.antistupid.warbase.utils.CompareHelp;
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -64,7 +64,7 @@ public class RandomSuffix {
     static public int compareAllocs(RandomSuffix a, RandomSuffix b) {
         int c = StatAlloc.compare(a.statAllocs, b.statAllocs);
         if (c != 0) return c;
-        c = Misc.compareForNullAtBottom(a.bonus, b.bonus);
+        c = CompareHelp.compareForNullAtBottom(a.bonus, b.bonus);
         if (c != 0 || a.bonus == null) return c;
         return StatAlloc.compare(a.bonus.statAllocs, b.bonus.statAllocs);
     }

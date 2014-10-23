@@ -63,8 +63,7 @@ public class Gem extends Item<GemT> {
         }
     }
     
-    public void renderStats(int playerLevel, StatMap stats) {
-        stats.clear();
+    public void collectStats(StatMap stats, int playerLevel) {
         if (statAllocs != null) {           
             if (scalingLevelMax == 0) {
                 for (StatAlloc x: statAllocs) {

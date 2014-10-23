@@ -18,7 +18,7 @@ import com.antistupid.warbase.IntSet;
 import com.antistupid.warkit.items.RandomSuffix;
 import com.antistupid.warkit.items.RandomSuffixGroup;
 import com.antistupid.warbase.structs.StatAlloc;
-import com.antistupid.warbase.utils.Misc;
+import com.antistupid.warbase.utils.CompareHelp;
 import com.antistupid.warbase.data.AsiaUpgradeChain;
 import com.antistupid.warbase.ids.ItemBonusType;
 import com.antistupid.warbase.ids.ItemClass;
@@ -30,11 +30,12 @@ import com.antistupid.warbase.types.GemT;
 import com.antistupid.warbase.types.ProfT;
 import com.antistupid.warbase.types.QualityT;
 import com.antistupid.warbase.types.RaceT;
+import com.antistupid.warbase.types.SlotT;
 import com.antistupid.warbase.types.SocketT;
 import com.antistupid.warbase.types.SpecT;
 import com.antistupid.warbase.types.StatT;
 import com.antistupid.warbase.types.WeaponT;
-import com.antistupid.warkit.items.AbstractEnchant;
+import com.antistupid.warkit.items.ItemEnchant;
 import com.antistupid.warkit.items.Armor;
 import com.antistupid.warkit.items.ArmorEnchant;
 import com.antistupid.warkit.items.Enchantment;
@@ -42,7 +43,6 @@ import com.antistupid.warkit.items.Gem;
 import com.antistupid.warkit.items.Item;
 import com.antistupid.warkit.items.ItemBonus;
 import com.antistupid.warkit.items.ItemSet;
-import com.antistupid.warkit.items.BonusGroup;
 import com.antistupid.warkit.items.ItemContext;
 import com.antistupid.warkit.items.ItemBonusCluster;
 import com.antistupid.warkit.items.ProfValue;
@@ -58,13 +58,13 @@ public class WarKit {
    
     public final int version;
     public final long createdTime;
-    
 
     public final SortedMap<Integer,Wearable> wearableMap;
+    public final SortedMap<Integer,Wearable>[] slotItems;
     public final SortedMap<Integer,Gem> gemMap;
     public final SortedMap<Integer,ItemSet> itemSetMap;    
     public final SortedMap<Integer,ItemBonus> itemBonusMap;
-    public final SortedMap<Integer,AbstractEnchant> enchantMap;
+    public final SortedMap<Integer,ItemEnchant> enchantMap;
     public final SortedMap<Integer,WeaponEnchant>[] weaponEnchants;
     public final SortedMap<Integer,ArmorEnchant>[] armorEnchants;
             
@@ -73,9 +73,7 @@ public class WarKit {
             TreeMap<Integer,Gem> gemMap, 
             TreeMap<Integer,ItemSet> itemSetMap,
             TreeMap<Integer,ItemBonus> itemBonusMap,
-            TreeMap<Integer,AbstractEnchant> enchantMap,
-            TreeMap<Integer,WeaponEnchant>[] weaponEnchants,
-            TreeMap<Integer,ArmorEnchant>[] armorEnchants) {
+            TreeMap<Integer,ItemEnchant> enchantMap) {
         this.version = version;
         this.createdTime = createdTime;
         this.wearableMap = Collections.unmodifiableSortedMap(wearableMap);
@@ -83,28 +81,51 @@ public class WarKit {
         this.itemSetMap = Collections.unmodifiableSortedMap(itemSetMap);
         this.itemBonusMap = Collections.unmodifiableSortedMap(itemBonusMap);
         this.enchantMap = Collections.unmodifiableSortedMap(enchantMap);
-        this.weaponEnchants = new SortedMap[weaponEnchants.length];
-        for (int i = 0; i < weaponEnchants.length; i++) {
-            this.weaponEnchants[i] = Collections.unmodifiableSortedMap(weaponEnchants[i]);
-        }        
-        this.armorEnchants = new SortedMap[armorEnchants.length];
-        for (int i = 0; i < armorEnchants.length; i++) {
-            this.armorEnchants[i] = Collections.unmodifiableSortedMap(armorEnchants[i]);    
+        //
+        armorEnchants = allocate(EquipT.db.size());
+        weaponEnchants = allocate(WeaponT.db.size());
+        for (ItemEnchant x: enchantMap.values()) {
+            if (x instanceof ArmorEnchant) {
+                ArmorEnchant e = (ArmorEnchant)x;
+                EquipT.db.forEach(e.allowedEquip, t -> {                        
+                    armorEnchants[t.index].put(e.enchantment.id, e);
+                });
+            } else if (x instanceof WeaponEnchant) {
+                WeaponEnchant e = (WeaponEnchant)x;
+                WeaponT.db.forEach(e.allowedWeapons, t -> {                        
+                    weaponEnchants[t.index].put(e.enchantment.id, e);
+                });
+            }
         }
-            
-        
-        /*
-        weaponEnchants = new SortedMap[WeaponT.db.size()];
-        for (int i = 0; i < weaponEnchants.length; i++) {
-            
+        protect(armorEnchants);
+        protect(weaponEnchants);
+        slotItems = allocate(SlotT.db.size());
+        for (Wearable x: wearableMap.values()) {
+            for (SlotT s: SlotT.db.types) {
+                if (s.canContain(x.equip)) {
+                    slotItems[s.index].put(x.itemId, x);
+                }
+            }
         }
-        WeaponT.db.forEach(allowedWeapons, x -> {                        
-            weaponEnchants[x.createFastLookup].put(e.enchantment.id, e);
-        });*/
+        protect(slotItems);
     }
     
-    static final SortedMap<Integer,? extends AbstractEnchant> emptyEnchantMap = Collections.unmodifiableSortedMap(new TreeMap<>());    
-    public SortedMap<Integer,? extends AbstractEnchant> getEnchantUniverse(Item item) {
+    static private SortedMap[] allocate(int num) {
+        SortedMap[] v = new SortedMap[num];
+        for (int i = 0; i < num; i++) {
+            v[i] = new TreeMap<>();
+        }
+        return v;
+    }
+    
+    static private void protect(SortedMap[] v) {
+        for (int i = 0; i < v.length; i++) {
+            v[i] = Collections.unmodifiableSortedMap(v[i]);    
+        }
+    }
+    
+    static final SortedMap<Integer,? extends ItemEnchant> emptyEnchantMap = Collections.unmodifiableSortedMap(new TreeMap<>());    
+    public SortedMap<Integer,? extends ItemEnchant> getEnchantUniverse(Item item) {
         if (item instanceof Armor) {
             return armorEnchants[item.equip.index];
         } else if (item instanceof Weapon) {
@@ -114,7 +135,7 @@ public class WarKit {
         }
     }
     
-    public AbstractEnchant findEnchant(Item item, int enchantId) {
+    public ItemEnchant findEnchant(Item item, int enchantId) {
         return getEnchantUniverse(item).get(enchantId);
     }
     
@@ -175,19 +196,26 @@ public class WarKit {
         String read() throws IOException;
     }
     
-    //static public WarKit load() { return load(Paths.get("WKDB.dat")); }
     static public WarKit load(Path file) {
-        //final long startTime = System.currentTimeMillis();
+        final long startTime = System.nanoTime();
 
         // expose
-        TreeMap<Integer,Wearable> wearableMap = new TreeMap<>();  
+        TreeMap<Integer,Wearable> wearableMap = new TreeMap<>(); 
         TreeMap<Integer,Gem> gemMap = new TreeMap<>();
         TreeMap<Integer,ItemSet> itemSetMap = new TreeMap<>();
         TreeMap<Integer,ItemBonus> itemBonusMap = new TreeMap<>();
-
+        TreeMap<Integer,ItemEnchant> enchantMap = new TreeMap<>();
+        
+        // helper struct
+        class ItemGroup {
+            final int[] ids;
+            final Wearable[] items;   
+            ItemGroup(int n) {
+                ids = new int[n];
+                items = new Wearable[n];
+            }
+        }
         // internal
-        //TreeMap<Integer,String> nameDescMap = new TreeMap<>();
-        //TreeMap<Integer,String> fileNameMap = new TreeMap();
         TreeMap<Integer,Enchantment> enchantmentMap = new TreeMap<>();
         TreeMap<Integer,Unique> uniqueMap = new TreeMap<>();
         TreeMap<Integer,UpgradeChain> upgradeChainMap = new TreeMap<>();
@@ -195,15 +223,13 @@ public class WarKit {
         TreeMap<Integer,RandomSuffix> suffixMap = new TreeMap<>();
         TreeMap<Integer,RandomSuffixGroup> suffixGroupMap = new TreeMap<>();
         TreeMap<Integer,ItemGroup> itemGroupMap = new TreeMap<>();
-        //TreeMap<Integer,BonusGroup> auxGroupMap = new TreeMap<>();
-        //TreeMap<Integer,BonusGroup> namedGroupMap = new TreeMap<>();
         TreeMap<Integer,ItemContext[]> ctxMap = new TreeMap<>();
         
         // memo
-        TreeMap<SocketT[],SocketT[]> socketsMemo = new TreeMap<>(Misc.arrayComparator((a, b) -> Integer.compare(a.id, b.id)));     
+        TreeMap<SocketT[],SocketT[]> socketsMemo = new TreeMap<>(CompareHelp.arrayComparator((a, b) -> Integer.compare(a.id, b.id)));     
         TreeMap<StatAlloc,StatAlloc> statAllocMemo = new TreeMap<>(StatAlloc::compare);     
-        TreeMap<StatAlloc[],StatAlloc[]> statAllocsMemo = new TreeMap<>(Misc.arrayComparator(StatAlloc::compare));     
-        //TreeMap<NamedItemBonus[],ItemBonusCluster[]> namedBonusesMemo = new TreeMap<>(Misc.arrayComparator((a, b) -> ItemBonus.CMP_ARRAY.compare(a.components, b.components))); 
+        TreeMap<StatAlloc[],StatAlloc[]> statAllocsMemo = new TreeMap<>(CompareHelp.arrayComparator(StatAlloc::compare));     
+        //TreeMap<NamedItemBonus[],ItemBonusCluster[]> namedBonusesMemo = new TreeMap<>(CompareHelp.arrayComparator((a, b) -> ItemBonus.CMP_ARRAY.compare(a.components, b.components))); 
             
         try (DataInputStream in = new DataInputStream(new BufferedInputStream(Files.newInputStream(file)))) {
             int version = in.readInt();
@@ -386,61 +412,62 @@ public class WarKit {
              
             for (int ctx = 0; ctx < contextGroupCount; ctx++) {
                 int id = in.readUnsignedByte();
-                int groupSize = in.readUnsignedByte();
-
-                ItemContext[] ctxs = new ItemContext[groupSize];                 
-                for (int i = 0; i < groupSize; i++) {
-                    String name = in.readUTF();
-                    String context = in.readUTF();
+                int size = in.readUnsignedByte();
+                ItemContext[] ctxs = new ItemContext[size];                 
+                for (int i = 0; i < size; i++) {
+                    String name = indexedString.read();
+                    String context = indexedString.read();
                     ItemBonus[] defaultBonuses;
                     int num = in.readUnsignedByte();
-                    ArrayList<ItemBonus> set = new ArrayList<>();
+                    ArrayList<ItemBonus> comps = new ArrayList<>();
                     defaultBonuses = new ItemBonus[num];
                     for (int j = 0; j < num; j++) {
                         ItemBonus b = itemBonusMap.get(in.readUnsignedShort());
                         defaultBonuses[j] = b;
-                        set.add(b);
+                        comps.add(b);
                     }  
-                    num = in.readUnsignedByte();
-                    ItemBonus[][] m = new ItemBonus[num][];
-                    int p = 1;
-                    for (int j = 0; j < num; j++) {
-                        int n = in.readUnsignedByte();
-                        ItemBonus[] v = new ItemBonus[1 + n];
-                        for (int k = 0; k < n; k++) {
-                            ItemBonus b = itemBonusMap.get(in.readUnsignedShort());
-                            v[1 + k] = b;
-                            set.add(b);
+                    num = in.readUnsignedByte();    
+                    ItemBonusCluster[] opts = null;
+                    if (num > 0) {
+                        ItemBonus[][] m = new ItemBonus[num][];
+                        int p = 1;
+                        for (int j = 0; j < num; j++) {
+                            int n = in.readUnsignedByte();
+                            ItemBonus[] v = new ItemBonus[1 + n];
+                            for (int k = 0; k < n; k++) {
+                                ItemBonus b = itemBonusMap.get(in.readUnsignedShort());
+                                v[1 + k] = b;
+                                comps.add(b);
+                            }
+                            m[j] = v;
+                            p *= v.length;
                         }
-                        m[j] = v;
-                        p *= v.length;
-                    }
-                    ArrayList<ItemBonusCluster> uni = new ArrayList<>(p);
-                    uni.add(ItemBonusCluster.NONE);
-                    ItemBonus[] v = new ItemBonus[num];
-                    for (int j = 0; j < p; j++) {
-                        int d = j;
-                        int n = 0;
-                        for (int k = 0; k < num; k++) {
-                            ItemBonus[] u = m[k];
-                            ItemBonus b = u[d % u.length];
-                            d /= u.length;
-                            if (b != null) {
-                                v[n++] = b;
-                            }                   
-                        }
-                        if (n > 0) {
-                            ItemBonusCluster b = mergeItemBonuses(null, Arrays.copyOf(v, n), statAllocsMemo, socketsMemo);                            
-                            uni.add(renameItemBonuses(b));
-                        }
-                    }            
-                    set.sort(ItemBonus.CMP_ID);
-                    uni.sort((a, b) -> ItemBonus.CMP_ARRAY.compare(a.components, b.components));    
-                                        
+                        ArrayList<ItemBonusCluster> uni = new ArrayList<>(p);
+                        uni.add(ItemBonusCluster.NONE);
+                        ItemBonus[] v = new ItemBonus[num];
+                        for (int j = 0; j < p; j++) {
+                            int d = j;
+                            int n = 0;
+                            for (int k = 0; k < num; k++) {
+                                ItemBonus[] u = m[k];
+                                ItemBonus b = u[d % u.length];
+                                d /= u.length;
+                                if (b != null) {
+                                    v[n++] = b;
+                                }                   
+                            }
+                            if (n > 0) {
+                                ItemBonusCluster b = mergeItemBonuses(null, Arrays.copyOf(v, n), statAllocsMemo, socketsMemo);                            
+                                uni.add(renameItemBonuses(b));
+                            }
+                        }            
+                        uni.sort((a, b) -> ItemBonus.CMP_ARRAY.compare(a.components, b.components));    
+                        opts = uni.toArray(new ItemBonusCluster[uni.size()]);
+                    }                    
+                    comps.sort(ItemBonus.CMP_ID);
                     ctxs[i] = new ItemContext(i, context, 
                             mergeItemBonuses(name, defaultBonuses, statAllocsMemo, socketsMemo), 
-                            uni.toArray(new ItemBonusCluster[uni.size()]),
-                            set.toArray(new ItemBonus[set.size()])
+                            opts, comps.toArray(new ItemBonus[comps.size()])
                     );                      
                  }
                  ctxMap.put(id, ctxs);
@@ -473,14 +500,14 @@ public class WarKit {
                 int num = in.readUnsignedByte();
                 ItemBonus[][] m = new ItemBonus[num][];
                 int p = 1;
-                ArrayList<ItemBonus> set = new ArrayList<>();
+                ArrayList<ItemBonus> itemSet = new ArrayList<>();
                 for (int j = 0; j < num; j++) {
                     int n = in.readUnsignedByte();
                     ItemBonus[] v = new ItemBonus[1 + n];
                     for (int k = 0; k < n; k++) {
                         ItemBonus bonus = itemBonusMap.get(in.readUnsignedShort());
                         v[1 + k] = bonus;
-                        set.add(bonus);
+                        itemSet.add(bonus);
                     }
                     m[j] = v;
                     p *= v.length;
@@ -503,10 +530,10 @@ public class WarKit {
                         uni.add(mergeItemBonuses(Arrays.copyOf(v, n)));
                     }
                 }              
-                set.sort(ItemBonus.CMP_ID);
+                itemSet.sort(ItemBonus.CMP_ID);
                 uni.sort((a, b) -> ItemBonus.CMP_ARRAY.compare(a.components, b.components));
                 auxGroupMap.put(id, new BonusGroup(id, 
-                        set.toArray(new ItemBonus[set.size()]),
+                        itemSet.toArray(new ItemBonus[itemSet.size()]),
                         uni.toArray(new ItemBonusCluster[uni.size()]), 0));                
             }
             */
@@ -557,10 +584,10 @@ public class WarKit {
             for (int i = 0; i < itemSetCount; i++) {
                 int id = in.readUnsignedShort();
                 String name = in.readUTF();
-                ProfT reqProf = ProfT.db.by_id.get(in.readUnsignedShort());
-                int reqProfLevel = in.readUnsignedShort();
+                int size = in.readUnsignedByte();
+                ProfValue reqProf = readProfValue(in);
                 int specCount = in.readUnsignedByte();
-                ItemSet set = new ItemSet(id, name, reqProf, reqProfLevel, specCount);
+                ItemSet set = new ItemSet(id, name, size, reqProf, specCount);
                 for (int j = 0; j < specCount; j++) {
                     SpecT spec = SpecT.db.by_id.get(in.readUnsignedShort());
                     int num = in.readUnsignedByte();
@@ -575,19 +602,7 @@ public class WarKit {
                     }                    
                 }      
                 itemSetMap.put(id, set);
-            }
-            
-            
-            
-            TreeMap<Integer,AbstractEnchant> enchantMap = new TreeMap<>();
-            TreeMap<Integer,WeaponEnchant>[] weaponEnchants = new TreeMap[WeaponT.db.size()];
-            for (int i = 0; i < weaponEnchants.length; i++) {
-                weaponEnchants[i] = new TreeMap<>();
             }            
-            TreeMap<Integer,ArmorEnchant>[] armorEnchants = new TreeMap[EquipT.db.size()];
-            for (int i = 0; i < armorEnchants.length; i++) {
-                armorEnchants[i] = new TreeMap<>();
-            }
             
             for (int index = 0; index < enchantCount; index++) {
                 int spellId = in.readInt();
@@ -603,86 +618,21 @@ public class WarKit {
                 boolean isRetired = (flags & 0x04) != 0; //? 1 : 0; // tinker or not
                 int mask1 = in.readInt();
                 int mask2 = in.readInt();                
-                AbstractEnchant enchant;
+                ItemEnchant enchant;
                 if (isWeapon) {
                     long allowedWeapons = WeaponT.blizzBits.decode(mask2);
-                    WeaponEnchant e = new WeaponEnchant(spellId, itemId, name, spellDesc, icon, maxItemLevel, isTinker, isRetired, enchantment, allowedWeapons);
-                    WeaponT.db.forEach(allowedWeapons, x -> {                        
-                        WeaponEnchant old = weaponEnchants[x.index].put(e.enchantment.id, e);
-                        if (old != null) {
-                            System.out.println("EnchantCollision: " + x.name + ": " + e.spellId + ":" + e.name + " :: " + old.spellId + ":" + old.name);
-                        }
-                    });
-                    enchant = e;
+                    enchant = new WeaponEnchant(spellId, itemId, name, spellDesc, icon, maxItemLevel, isTinker, isRetired, enchantment, allowedWeapons);
                 } else {
                     long allowedEquip = EquipT.blizzBits.decode(mask1);
                     long allowedArmor = ArmorT.blizzBits.decode(mask2);
-                    ArmorEnchant e = new ArmorEnchant(spellId, itemId, name, spellDesc, icon, maxItemLevel, isTinker, isRetired, enchantment, allowedEquip, allowedArmor);                    
-                    EquipT.db.forEach(allowedEquip, x -> {                        
-                        ArmorEnchant old = armorEnchants[x.index].put(e.enchantment.id, e);
-                        if (old != null) {
-                            System.out.println("EnchantCollision: " + e.spellId + ":" + e.name + " :: " + old.spellId + ":" + old.name);
-                        }
-                    });                    
-                    enchant = e;
+                    enchant = new ArmorEnchant(spellId, itemId, name, spellDesc, icon, maxItemLevel, isTinker, isRetired, enchantment, allowedEquip, allowedArmor);                    
                 }
                 enchantMap.put(enchant.spellId, enchant);
-                
-                
-                /*
-                out.writeInt(spell.data.id); // spell id                               
-                writeIndexedString(out, spell.data.name); // lots of duplicates
-                writeIndexedString(out, spell.data.desc); // lots of duplicates
-
-                out.writeShort(enchant.id); // enchant id    
-                boolean isWeapon = spell.equip.itemType == 2;
-                out.writeBoolean(isWeapon); // is weapon
-                out.writeInt(spell.equip.equipMask); // not necessary for weapon
-                out.writeInt(spell.equip.weaponOrArmorMask); // weapon set
-                
-                */
             }
             
-            
-            /*
-            //itemBonusMap.put(0, new ItemBonusCluster(0, 0, 0, null));
-            ArrayList<NamedItemBonus> itemBonusBuf = new ArrayList<>();
-            HashMap<ItemBonus,ItemBonusCluster> namedSingleMap = new HashMap<>();
-            HashMap<Integer,ItemBonusCluster> namedMixinMap = new HashMap<>();
-            HashMap<Integer,ItemBonusCluster[]> namedDescMap = new HashMap<>();
-            */
-                    
-            //HashMap<Integer,ItemBonusCluster> 
             int gemCount = 0;
             for (int index = 0; index < itemCount; index++) {
-                /*
-            
-                 out.writeInt(item.sparse.id);
-                out.writeByte(item.header.itemClass);
-                out.writeByte(item.header.subClass);
-                out.writeChar(item.sparse.itemLevel);
-                out.writeByte(item.sparse.equipId);
-                out.writeByte(item.sparse.quality);                
-                out.writeByte(ExportHelp.getItemBind(item.sparse).id);
-                out.writeUTF(item.sparse.name);
-                out.writeUTF(orEmpty(item.sparse.text));
-
-                ProfT prof = ProfT.db.getById(item.sparse.reqSkill);
-                if (prof != null) {
-                    out.writeChar(prof.id);
-                    out.writeChar(item.sparse.reqSkillRank);
-                } else {
-                    out.writeChar(0);
-                    out.writeChar(0);
-                }
-
-                out.writeChar(item.sparse.reqReputationId);
-                out.writeChar(item.sparse.reqReputationRank);
-
-                out.writeInt(item.sparse.allowRaceMask & RaceT.db.all.mask);
-                out.writeInt(item.sparse.allowClassMask & ClassT.db.all.mask);
                 
-                */
                 int itemId = in.readInt();
                 int itemClass = in.readUnsignedByte();
                 int subClass = in.readUnsignedByte();
@@ -773,26 +723,9 @@ public class WarKit {
                         if (contextsId > 0) {                            
                             contexts = ctxMap.get(contextsId); // must exist                         
                         } else {
-                            //int nameDescId = in.readUnsignedShort();                            
-                            //nameDesc = nameDescMap.get(nameDescId);                            
                             nameDesc = indexedString.read();
-                            
-                            
-                            /*if (nameDesc == null && itemGroup != null) {
-                                nameDescId = 0;
-                                nameDesc = "Normal";
-                            }                            
-                            if (nameDesc != null) {
-                                namedBonuses = namedDescMap.get(nameDescId);
-                                if (namedBonuses == null) {
-                                    namedBonuses = new ItemBonusCluster[]{new ItemBonusCluster(nameDesc)};
-                                    namedDescMap.put(nameDescId, namedBonuses);
-                                }                                                               
-                            }*/
                         }
-                        
-                        //BonusGroup auxGroup = auxGroupMap.get(in.readUnsignedShort());                       
-                        
+
                         ItemSet itemSet = itemSetMap.get(in.readUnsignedShort());
                         
                         int[] spellIds = null;
@@ -888,23 +821,21 @@ public class WarKit {
                     Gem g = (Gem)item;
                     gemMap.put(itemId, g);          
                 }            
-            }              
-            return new WarKit(version, createdTime, wearableMap, gemMap, itemSetMap, itemBonusMap, enchantMap, weaponEnchants, armorEnchants); //, weaponEnchants, armorEnchants);
+            }    
+            System.out.println(String.format("WarKit (v%d, %tc) <%dms>", version, createdTime, (System.nanoTime() - startTime) / 1000000));
+            return new WarKit(version, createdTime, wearableMap, gemMap, itemSetMap, itemBonusMap, enchantMap);
         } catch (IOException err) {        
             throw new UncheckedIOException("WarKit Load Failed: " + file, err);
         } 
     }
         
-    static private class ItemGroup {
-        final int[] ids;
-        final Wearable[] items;   
-        ItemGroup(int n) {
-            ids = new int[n];
-            items = new Wearable[n];
-        }
+    static ProfValue readProfValue(DataInputStream in) throws IOException {
+        ProfT prof = ProfT.db.by_id.get(in.readUnsignedShort());
+        int level = in.readUnsignedShort();   
+        return prof != null ? new ProfValue(prof, level) : null;
     }
     
-    static <X> X memo(Map<X,X> map, X temp) {
+    static private <X> X memo(Map<X,X> map, X temp) {
         if (temp == null) {
             return null;
         }
@@ -915,7 +846,6 @@ public class WarKit {
         map.put(temp, temp);
         return temp;
     }
-    
 
     static private ItemBonusCluster mergeItemBonuses(String name, ItemBonus[] v, TreeMap<StatAlloc[],StatAlloc[]> statAllocsMemo, TreeMap<SocketT[],SocketT[]> socketsMemo) {
         QualityT qualityMax = null;

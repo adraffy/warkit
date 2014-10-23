@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import com.antistupid.warbase.IntSet;
 import com.antistupid.warbase.structs.StatAlloc;
-import com.antistupid.warbase.utils.Misc;
+import com.antistupid.warbase.utils.CompareHelp;
 import com.antistupid.warbase.types.QualityT;
 import com.antistupid.warbase.types.SocketT;
 
@@ -60,7 +60,7 @@ public class ItemBonus {
     }
     
     static public final Comparator<ItemBonus> CMP_ID = (a, b) -> a.id - b.id;
-    static public final Comparator<ItemBonus[]> CMP_ARRAY = Misc.arrayComparator(CMP_ID);
+    static public final Comparator<ItemBonus[]> CMP_ARRAY = CompareHelp.arrayComparator(CMP_ID);
 
     static public double score(ItemBonus[] components, IntSet ids) {
         int match = match(components, ids);        

@@ -1,6 +1,6 @@
 package com.antistupid.warkit.items;
 
-public class ArmorEnchant extends AbstractEnchant {
+public class ArmorEnchant extends ItemEnchant {
     
     public final long allowedEquip;
     public final long allowedArmor;

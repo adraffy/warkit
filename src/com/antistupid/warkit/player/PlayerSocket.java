@@ -13,7 +13,7 @@ public class PlayerSocket {
     public final PlayerSlot slot;
     public final int index;
     
-    SocketT _socket;
+    SocketT _socketType;
     Gem _gem;    
     final StatMap _stats = new StatMap();
     
@@ -28,10 +28,10 @@ public class PlayerSocket {
         sb.append("[");
         sb.append(index);
         sb.append("] ");
-        if (_socket == null) {
+        if (_socketType == null) {
             sb.append("<Invalid>");
         } else {
-            sb.append(_socket.name);
+            sb.append(_socketType.name);
             sb.append(": ");
             if (_gem == null) {
                 sb.append("Empty");                
@@ -69,7 +69,8 @@ public class PlayerSocket {
         if (_gem == null) {
             return;
         }
-        _gem.renderStats(slot.owner.playerLevel, _stats);
+        _stats.clear();
+        _gem.collectStats(_stats, slot.owner.playerLevel);
     }  
     
     public boolean isGemEffectivelyEqual(PlayerSocket other) {
@@ -77,7 +78,7 @@ public class PlayerSocket {
     }
     
     public boolean isValid() {
-        return _socket != null;
+        return _socketType != null;
     }
     
     public boolean isEmpty() {
@@ -85,19 +86,19 @@ public class PlayerSocket {
     }
     
     public SocketT getSocketColor() {
-        return _socket;
+        return _socketType;
     }
     
     public GemT getGemColor() {
-        return _socket != null && _gem != null ? _gem.type : null;
+        return _socketType != null && _gem != null ? _gem.type : null;
     }
     
     public boolean matches(boolean bonus) {
-        return _socket != null && _gem != null && _socket.matches(_gem.type, bonus);
+        return _socketType != null && _gem != null && _socketType.matches(_gem.type, bonus);
     }
     
     public String getGemName(boolean nullIfEmpty) {
-        if (_socket == null) {
+        if (_socketType == null) {
             return nullIfEmpty ? null : "No Socket";
         } else if (_gem == null) {
             return nullIfEmpty ? null : "No Gem";
@@ -119,12 +120,12 @@ public class PlayerSocket {
             throw new PlayerError.EquipSocket(this, item, item.name + " is not a gem");
         }
         Gem gem = (Gem)item;
-        if (_socket == null) {
+        if (_socketType == null) {
             throw new PlayerError.EquipSocket(this, gem, "No socket available");
         }
         slot.checkItem(gem, index);
-        if (!_socket.matches(gem.type, false)) {
-            throw new PlayerError.EquipSocket(this, gem, String.format("%s socket does not accept %s", _socket.name, gem.type));
+        if (!_socketType.matches(gem.type, false)) {
+            throw new PlayerError.EquipSocket(this, gem, String.format("%s socket does not accept %s", _socketType.name, gem.type));
         }
         if (slot._item.itemLevel < gem.reqItemLevel) {
             throw new PlayerError.EquipSocket(this, gem, String.format("%s item level too low (%d required)", slot._item, gem.reqItemLevel));

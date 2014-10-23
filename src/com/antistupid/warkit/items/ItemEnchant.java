@@ -1,6 +1,6 @@
 package com.antistupid.warkit.items;
 
-abstract public class AbstractEnchant {
+abstract public class ItemEnchant {
 
     public final int spellId;
     public final int itemId;
@@ -12,7 +12,7 @@ abstract public class AbstractEnchant {
     public final boolean isRetired;
     public final Enchantment enchantment;
     
-    AbstractEnchant(int spellId, int itemId, String name, String spellDesc, String icon, int maxItemLevel, boolean isTinker, boolean isRetired, Enchantment enchantment) {
+    ItemEnchant(int spellId, int itemId, String name, String spellDesc, String icon, int maxItemLevel, boolean isTinker, boolean isRetired, Enchantment enchantment) {
         this.spellId = spellId;
         this.itemId = itemId;
         this.name = name;

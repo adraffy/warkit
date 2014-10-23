@@ -1,7 +1,7 @@
 package com.antistupid.warkit;
 
 import com.antistupid.warbase.utils.SystemHelp;
-import com.antistupid.warkit.items.AbstractEnchant;
+import com.antistupid.warkit.items.ItemEnchant;
 import com.antistupid.warkit.items.Item;
 import com.antistupid.warkit.items.ItemSet;
 
@@ -26,8 +26,8 @@ abstract public class WarWebsite {
             url = getItemURL(((Item)x).itemId);
         } else if (x instanceof ItemSet) {
             url = getItemSetURL(((ItemSet)x).id);
-        } else if (x instanceof AbstractEnchant) {
-            url = getSpellURL(((AbstractEnchant)x).spellId);
+        } else if (x instanceof ItemEnchant) {
+            url = getSpellURL(((ItemEnchant)x).spellId);
         } else {
             return false;
         }

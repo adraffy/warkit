@@ -19,7 +19,7 @@ import com.antistupid.warbase.types.SlotT;
 import com.antistupid.warbase.types.SpecT;
 import com.antistupid.warbase.types.TypeT;
 import com.antistupid.warkit.WarKit;
-import com.antistupid.warkit.items.AbstractEnchant;
+import com.antistupid.warkit.items.ItemEnchant;
 import com.antistupid.warkit.items.Gem;
 import com.antistupid.warkit.items.Item;
 import com.antistupid.warkit.items.Wearable;
@@ -458,14 +458,14 @@ public class SimcProfile {
                 errors.add(new LineError(lineno, line0, "Unexpected Item Bonuses: " + bonuses));
             }         
             try {
-                AbstractEnchant e = null;
+                ItemEnchant e = null;
                 if (enchantId != 0) {
                     e = wk.findEnchant(item, enchantId);
                     if (e == null) {
                         errors.add(new LineError(lineno, line0, "Unknown Enchant ID: " + enchantId));
                     }
                 } else if (enchantName != null) {                    
-                    for (AbstractEnchant x: wk.getEnchantUniverse(item).values()) {
+                    for (ItemEnchant x: wk.getEnchantUniverse(item).values()) {
                         if (underscore(x.name).equals(enchantName)) {
                             e = x;
                             break;
@@ -608,7 +608,7 @@ public class SimcProfile {
                 sb.append(",upgrade=");
                 sb.append(up);
             }
-            AbstractEnchant ench = x.getEnchant();
+            ItemEnchant ench = x.getEnchant();
             if (ench != null) {
                 sb.append(",enchant_id");
                 sb.append(ench.enchantment.id);

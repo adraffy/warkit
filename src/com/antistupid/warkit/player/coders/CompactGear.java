@@ -21,7 +21,7 @@ import com.antistupid.warbase.types.RaceT;
 import com.antistupid.warbase.types.SlotT;
 import com.antistupid.warbase.types.SpecT;
 import com.antistupid.warkit.WarKit;
-import com.antistupid.warkit.items.AbstractEnchant;
+import com.antistupid.warkit.items.ItemEnchant;
 import com.antistupid.warkit.items.Gem;
 import com.antistupid.warkit.items.Item;
 import com.antistupid.warkit.items.Wearable;
@@ -385,7 +385,7 @@ public class CompactGear {
                                 errors.add(new LineError(lineno, line0, String.format("Invalid Enchant Id: \"%s\"", comp)));
                                 continue;  
                             }
-                            AbstractEnchant enchant = wk.findEnchant(item, enchantId);
+                            ItemEnchant enchant = wk.findEnchant(item, enchantId);
                             if (enchant == null) {
                                 errors.add(new LineError(lineno, line0, "Unknown Enchant Id: " + enchantId));
                                 continue;
@@ -455,7 +455,7 @@ public class CompactGear {
             if (slot.getExtraSocket()) {
                 sb.append(" $:");
             }
-            AbstractEnchant enchant = slot.getEnchant();
+            ItemEnchant enchant = slot.getEnchant();
             if (enchant != null) {
                 sb.append(" $");
                 sb.append(enchant.enchantment.id);

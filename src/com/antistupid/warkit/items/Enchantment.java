@@ -1,6 +1,5 @@
 package com.antistupid.warkit.items;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import com.antistupid.warbase.structs.StatAlloc;
 import com.antistupid.warbase.stats.StatMap;
@@ -48,6 +47,11 @@ public class Enchantment {
         hasDescription = spells == null && ((statAllocs == null) != (profBoosts == null));
     }
     
+    @Override
+    public String toString() {
+        return String.format("%s<%d>", getClass().getSimpleName(), id);
+    }
+    
     // relatively expensive
     public String toDesc(int playerLevel) {
         StringBuilder sb = new StringBuilder();
@@ -57,9 +61,8 @@ public class Enchantment {
     
     public void collectStats(StatMap stats, int playerLevel) {
         if (statAllocs != null) {
-            int lvl = scalingLevelMax > 0 ? Math.min(playerLevel, scalingLevelMax) : playerLevel;
-            int min = scalingLevelMin;
-            float scaling = PlayerScaling.get(Math.max(min, lvl), scalingId);
+            int lvl = PlayerScaling.max(scalingLevelMax, playerLevel);
+            float scaling = PlayerScaling.get(Math.max(scalingLevelMin, lvl), scalingId);
             /*if (perLevel > 0 && lvl > min) {                
                 scaling *= (min + perLevel * (lvl - min)) / lvl;                
             } */              
@@ -82,11 +85,10 @@ public class Enchantment {
             num += stats.appendTo(sb, false, false);
         }
         if (profBoosts != null) {
-            for (int i = 0; i < profBoosts.length; i++) {
+            for (ProfValue x : profBoosts) {
                 if (num++ > 0) {
                     sb.append(", ");
                 }
-                ProfValue x = profBoosts[i];
                 sb.append("+");
                 sb.append(x.value);
                 sb.append(" ");
@@ -94,13 +96,6 @@ public class Enchantment {
             }
         }        
     }
-    
-    /*
-    @Override
-    public String toString() {
-        
-    }
-    */
     
     public void dump() {
         System.out.println("Desc[100]: " + toDesc(100));
