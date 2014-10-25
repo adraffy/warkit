@@ -6,6 +6,7 @@ import com.antistupid.warbase.stats.CompactBaseStats;
 import com.antistupid.warbase.stats.StatMap;
 import com.antistupid.warbase.types.RaceT;
 import com.antistupid.warbase.types.RatingT;
+import com.antistupid.warbase.types.SpecRoleT;
 import com.antistupid.warbase.types.SpecT;
 import com.antistupid.warbase.types.StatT;
 import com.antistupid.warbase.types.WeaponT;
@@ -114,7 +115,7 @@ public class PlayerModel {
     }
     
     public int getAP() {        
-        return getStat(StatT.AP) + getStat(apStat);
+        return getStat(StatT.AP) + getStat(apStat) + getStat(StatT.ARMOR); //(player != null && player.spec.role.bonusArmor ? 
     }
     
     public int getSP() {        
@@ -177,8 +178,8 @@ public class PlayerModel {
             if (player.playerLevel >= SpecT.PLAYER_LEVEL_ATTUNE_RATING) {
                 ratingMod[player.spec.attuneRating.index] *= SpecT.ATTUNE_RATING_COEFF;
             }            
-            if (player.spec.hasCritialStrikes()) {
-                baseCrit += 0.1;
+            if (SpecT.hasCritialStrikes(player.spec)) {
+                baseCrit += SpecT.CRITICAL_STRIKES;
             }            
         }
         if (raidBuff_versa) {
@@ -243,16 +244,17 @@ public class PlayerModel {
 
         
         staminaCoeff = HealthCurve.get(player.playerLevel);
-        playerManaMax = ManaCurve.get(player.playerLevel, player.spec);
+        playerManaMax = ManaCurve.getMax(player.playerLevel, player.spec);
 
         player.collectStats(gearStats);
         
         
         if (player.spec != null) {
-            if (player.spec.hasAttackPowerMasteryBonus()) {
+            if (player.spec.role == SpecRoleT.TANK) {
                 statMod[StatT.AP.index] *= 1 + getMasteryPerc();
             }
             if (!player.spec.role.bonusArmor) {
+                statMod[StatT.ARMOR.index] = 0;
                 gearStats.clear(StatT.ARMOR);
             }
             if (!player.spec.role.spirit) {

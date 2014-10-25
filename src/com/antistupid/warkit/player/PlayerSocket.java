@@ -5,6 +5,7 @@ import com.antistupid.warbase.stats.StatMap;
 import com.antistupid.warbase.data.PlayerScaling;
 import com.antistupid.warbase.types.GemT;
 import com.antistupid.warbase.types.SocketT;
+import com.antistupid.warbase.types.StatT;
 import com.antistupid.warkit.items.Gem;
 import com.antistupid.warkit.items.Item;
 
@@ -95,6 +96,10 @@ public class PlayerSocket {
     
     public boolean matches(boolean bonus) {
         return _socketType != null && _gem != null && _socketType.matches(_gem.type, bonus);
+    }
+    
+    public int getStat(StatT stat, boolean effective) {
+        return _socketType != null && _gem != null ? _stats.get(stat, effective) : 0;
     }
     
     public String getGemName(boolean nullIfEmpty) {

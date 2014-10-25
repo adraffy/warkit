@@ -29,6 +29,14 @@ public class Main {
         WarKit wk = WarKit.load(Paths.get("../WarExport/WKDB.dat"));            
         Armory a = new Armory(wk, hc, apiKey);        
         
+        if (true) {
+            
+            System.out.println(wk.consumeMap.get(58087).spell.duration);
+            
+            
+            return;
+        }
+        
         if (false) {
             for (Wearable x: wk.wearableMap.values()) {
                 if (x.itemLevel >= 800) {

@@ -22,7 +22,7 @@ public class Gem extends Item<GemT> {
     public final int scalingId;
     public final int scalingPerLevel;
     public final int spellId;
-    public final StatAlloc[] statAllocs;
+    public final StatAlloc[] statAllocs; // can be null?
 
     public Gem(
             int itemId, int itemLevel, GemT type, QualityT quality, EquipT equip, 
@@ -61,6 +61,12 @@ public class Gem extends Item<GemT> {
                 sb.append("StatAlloc").append(1 + i).append(": ").append(statAllocs[i]).append("\n");
             }
         }
+    }
+    
+    public StatMap getStats(int playerLevel) {
+        StatMap stats = new StatMap();
+        collectStats(stats, playerLevel);
+        return stats;
     }
     
     public void collectStats(StatMap stats, int playerLevel) {

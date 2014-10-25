@@ -19,17 +19,7 @@ public class Enchantment {
     public final StatAlloc[] statAllocs; // can be null
     public final ProfValue[] profBoosts;
     public final int[] spells;
-    
-   /*
-    int scalingLevelMin = in.readUnsignedShort();
-        int scalingLevelMax = in.readUnsignedShort();
-        int scalingId = in.readUnsignedByte();
-        int scalingPerLevel = in.readUnsignedShort();
-        ProfT reqProf = ProfT.db.getById(in.readUnsignedShort());
-        int reqProfSkill = in.readUnsignedShort();
-    */
-    
-    public final boolean hasDescription;
+    public final boolean hasDesc;
     
     public Enchantment(int id, String desc, int minScalingLevel, int maxScalingLevel, int scalingId, int scalingPerLevel, ProfT reqProf, int reqProfLevel, 
             StatAlloc[] statAllocs, ProfValue[] profBoosts, int[] spells) {
@@ -44,7 +34,7 @@ public class Enchantment {
         this.statAllocs = statAllocs;
         this.profBoosts = profBoosts;
         this.spells = spells;
-        hasDescription = spells == null && ((statAllocs == null) != (profBoosts == null));
+        hasDesc = spells == null && (statAllocs != null || profBoosts != null); // wut: ((statAllocs == null) != (profBoosts == null));
     }
     
     @Override
@@ -52,20 +42,26 @@ public class Enchantment {
         return String.format("%s<%d>", getClass().getSimpleName(), id);
     }
     
-    // relatively expensive
     public String toDesc(int playerLevel) {
         StringBuilder sb = new StringBuilder();
-        renderDesc(sb, playerLevel, new StatMap());
+        renderDesc(sb, playerLevel, null);
         return sb.toString();
     }    
     
+    public StatMap getStats(int playerLevel) {
+        StatMap stats = new StatMap();
+        collectStats(stats, playerLevel);
+        return stats;
+    }
+    
     public void collectStats(StatMap stats, int playerLevel) {
+        /*
         if (statAllocs != null) {
             int lvl = PlayerScaling.max(scalingLevelMax, playerLevel);
             float scaling = PlayerScaling.get(Math.max(scalingLevelMin, lvl), scalingId);
-            /*if (perLevel > 0 && lvl > min) {                
-                scaling *= (min + perLevel * (lvl - min)) / lvl;                
-            } */              
+            //if (perLevel > 0 && lvl > min) {                
+            //  scaling *= (min + perLevel * (lvl - min)) / lvl;                
+            //}              
             for (StatAlloc x: statAllocs) {
                 if (x.mod == 0) {
                     stats.add(x.stat, x.alloc);
@@ -75,14 +71,16 @@ public class Enchantment {
                 }
             }
         }
+        */
+        StatAlloc.collectSpellStats(stats, statAllocs, playerLevel, scalingLevelMin, scalingLevelMax, scalingId);
     }
     
-    public void renderDesc(StringBuilder sb, int playerLevel, StatMap stats) {
+    public int renderDesc(StringBuilder sb, int playerLevel, StatMap statBuf) {
         int num = 0;
-        if (statAllocs != null) {           
-            stats.clear(); 
-            collectStats(stats, playerLevel);
-            num += stats.appendTo(sb, false, false);
+        if (statAllocs != null) {      
+            statBuf = StatMap.recycle(statBuf);
+            collectStats(statBuf, playerLevel);
+            num += statBuf.appendTo(sb, false, false);
         }
         if (profBoosts != null) {
             for (ProfValue x : profBoosts) {
@@ -94,7 +92,8 @@ public class Enchantment {
                 sb.append(" ");
                 sb.append(x.prof.name);
             }
-        }        
+        }    
+        return num;
     }
     
     public void dump() {

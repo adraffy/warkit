@@ -28,13 +28,13 @@ abstract public class ItemEnchant {
         return maxItemLevel == 0 || itemLevel <= maxItemLevel;
     }
     
+    // does not check item level
+    // does not check tinker
     abstract public boolean canApply(Item item);
     
     @Override
     public String toString() {
         return String.format("%s<%s>(%s)", getClass().getSimpleName(), spellId, name);
     }
-    
-    
     
 }

@@ -38,6 +38,8 @@ import com.antistupid.warbase.types.WeaponT;
 import com.antistupid.warkit.items.ItemEnchant;
 import com.antistupid.warkit.items.Armor;
 import com.antistupid.warkit.items.ArmorEnchant;
+import com.antistupid.warkit.items.Consumable;
+import com.antistupid.warkit.items.ConsumableSpell;
 import com.antistupid.warkit.items.Enchantment;
 import com.antistupid.warkit.items.Gem;
 import com.antistupid.warkit.items.Item;
@@ -60,11 +62,13 @@ public class WarKit {
     public final long createdTime;
 
     public final SortedMap<Integer,Wearable> wearableMap;
-    public final SortedMap<Integer,Wearable>[] slotItems;
     public final SortedMap<Integer,Gem> gemMap;
     public final SortedMap<Integer,ItemSet> itemSetMap;    
     public final SortedMap<Integer,ItemBonus> itemBonusMap;
     public final SortedMap<Integer,ItemEnchant> enchantMap;
+    public final SortedMap<Integer,Consumable> consumeMap;
+
+    public final SortedMap<Integer,Wearable>[] slotItems;
     public final SortedMap<Integer,WeaponEnchant>[] weaponEnchants;
     public final SortedMap<Integer,ArmorEnchant>[] armorEnchants;
             
@@ -73,7 +77,8 @@ public class WarKit {
             TreeMap<Integer,Gem> gemMap, 
             TreeMap<Integer,ItemSet> itemSetMap,
             TreeMap<Integer,ItemBonus> itemBonusMap,
-            TreeMap<Integer,ItemEnchant> enchantMap) {
+            TreeMap<Integer,ItemEnchant> enchantMap,
+            TreeMap<Integer,Consumable> consumeMap) {
         this.version = version;
         this.createdTime = createdTime;
         this.wearableMap = Collections.unmodifiableSortedMap(wearableMap);
@@ -81,6 +86,7 @@ public class WarKit {
         this.itemSetMap = Collections.unmodifiableSortedMap(itemSetMap);
         this.itemBonusMap = Collections.unmodifiableSortedMap(itemBonusMap);
         this.enchantMap = Collections.unmodifiableSortedMap(enchantMap);
+        this.consumeMap = Collections.unmodifiableSortedMap(consumeMap);
         //
         armorEnchants = allocate(EquipT.db.size());
         weaponEnchants = allocate(WeaponT.db.size());
@@ -205,6 +211,7 @@ public class WarKit {
         TreeMap<Integer,ItemSet> itemSetMap = new TreeMap<>();
         TreeMap<Integer,ItemBonus> itemBonusMap = new TreeMap<>();
         TreeMap<Integer,ItemEnchant> enchantMap = new TreeMap<>();
+        TreeMap<Integer,Consumable> consumeMap = new TreeMap<>();
         
         // helper struct
         class ItemGroup {
@@ -250,6 +257,9 @@ public class WarKit {
             int itemSetCount = in.readInt();
             int enchantCount = in.readInt();
             int itemCount = in.readInt();
+            
+            int consumeSpellCount = in.readInt();
+            int consumeItemCount = in.readInt();
             /*
             o.writeInt(enchantmentMap.size());
             o.writeInt(itemLimitMap.size());
@@ -821,9 +831,37 @@ public class WarKit {
                     Gem g = (Gem)item;
                     gemMap.put(itemId, g);          
                 }            
-            }    
+            }
+            
+            HashMap<Integer,ConsumableSpell> consumeSpellMap = new HashMap<>();
+            for (int index = 0; index < consumeSpellCount; index++) {
+                int spellId = in.readInt();
+                int duration = in.readInt();
+                int scalingLevelMax = in.readUnsignedByte();
+                int scalingId = in.readUnsignedByte();
+                int num = in.readUnsignedByte();
+                StatAlloc[] statAllocs = new StatAlloc[num];
+                for (int i = 0; i < num; i++) {
+                    StatT stat = StatT.db.by_id.require(in.readUnsignedByte());
+                    int value = in.readUnsignedShort();
+                    float coeff = in.readFloat();
+                    statAllocs[i] = memo(statAllocMemo, new StatAlloc(stat, value, coeff));
+                }
+                statAllocs = memo(statAllocsMemo, statAllocs);                
+                consumeSpellMap.put(spellId, new ConsumableSpell(spellId, duration, scalingLevelMax, scalingId, statAllocs));
+            }
+            for (int index = 0; index < consumeItemCount; index++) {
+                int itemId = in.readInt();
+                int type = in.readUnsignedByte();
+                int flags = in.readUnsignedByte();
+                String name = indexedString.read();
+                String icon = indexedString.read();
+                int spellId = in.readInt();
+                ConsumableSpell spell = consumeSpellMap.get(spellId); // never null                
+                consumeMap.put(itemId, new Consumable(itemId, name, icon,  type, flags, spell));
+            }            
             System.out.println(String.format("WarKit (v%d, %tc) <%dms>", version, createdTime, (System.nanoTime() - startTime) / 1000000));
-            return new WarKit(version, createdTime, wearableMap, gemMap, itemSetMap, itemBonusMap, enchantMap);
+            return new WarKit(version, createdTime, wearableMap, gemMap, itemSetMap, itemBonusMap, enchantMap, consumeMap);
         } catch (IOException err) {        
             throw new UncheckedIOException("WarKit Load Failed: " + file, err);
         } 

@@ -35,7 +35,7 @@ public class RandomSuffix {
         if (quality == null) {
             quality = item.quality;
         }     
-        StatAlloc.collectStats(stats, statAllocs, ItemStatCurve.get(itemLevel, quality, item.getRandPropIndex()));
+        StatAlloc.collectItemStats(stats, statAllocs, ItemStatCurve.get(itemLevel, quality, item.getRandPropIndex()));
     }
     
     private void appendSockets(StringBuilder sb) {

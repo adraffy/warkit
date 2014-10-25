@@ -83,6 +83,7 @@ public class PlayerSlot {
     int _baseArmor;
     final StatMap _gearStats = new StatMap();
     final StatMap _socketBonusStats = new StatMap();
+    final StatMap _enchantStats = new StatMap();
     //final ArrayList<ItemBonus> _customBonuses = new ArrayList<>();    
     float _weaponDamage;
     
@@ -576,7 +577,8 @@ public class PlayerSlot {
         } else if (!enchant.canApply(_item)) {
             throw new PlayerError.EquipSlot(this, _item, String.format("%s cannot be applied", enchant.name));
         }
-        _enchant = enchant;        
+        _enchant = enchant;  
+        updateEnchant();
     }
     
     void update() {
@@ -651,7 +653,7 @@ public class PlayerSlot {
                     _socket[newSockets++]._socketType = x;
                 }
             }
-            StatAlloc.collectStats(_gearStats, ctx.defaultBonus.statAllocs, statBudget);
+            StatAlloc.collectItemStats(_gearStats, ctx.defaultBonus.statAllocs, statBudget);
             if (ctx.optionalBonuses != null) {
                 ItemBonusCluster b = ctx.optionalBonuses[_contextOptionIndex];                
                 if (b.sockets != null) {
@@ -659,12 +661,12 @@ public class PlayerSlot {
                         _socket[newSockets++]._socketType = x;
                     }
                 }
-                StatAlloc.collectStats(_gearStats, b.statAllocs, statBudget);
+                StatAlloc.collectItemStats(_gearStats, b.statAllocs, statBudget);
             }
         }            
         RandomSuffix suffix = getSuffix();
         if (suffix != null) {    
-            StatAlloc.collectStats(_gearStats, suffix.statAllocs, statBudget);
+            StatAlloc.collectItemStats(_gearStats, suffix.statAllocs, statBudget);
             if (suffix.bonus != null && suffix.bonus.sockets != null) {
                 for (SocketT x: suffix.bonus.sockets) {
                     _socket[newSockets++]._socketType = x;
@@ -706,9 +708,11 @@ public class PlayerSlot {
                     break;
                 }
             }         
+            bonus.collectStats(_socketBonusStats, owner.playerLevel);
+            /*
             int lvl = PlayerScaling.max(bonus.scalingLevelMax, owner.playerLevel);  
             int min = bonus.scalingLevelMin;
-            float scaling = PlayerScaling.get(Math.max(min, lvl), bonus.scalingId);
+            float scaling = PlayerScaling.getRaw(Math.max(min, lvl), bonus.scalingId);
             if (bonus.scalingPerLevel > 0 && lvl > min) {              
                 // i dont think this is necessary
                 scaling *= (min + bonus.scalingPerLevel * (lvl - min)) / lvl;                
@@ -721,10 +725,17 @@ public class PlayerSlot {
                 int value = (int)(0.5 + scaling * x.mod);
                 _socketBonusStats.add(x.stat, value);
             } 
+            */
         } else {            
             _socketBonusSatisfied = false;
-        }
-        
+        }        
+    }
+    
+    void updateEnchant() {
+        _enchantStats.clear();
+        if (_enchant != null) {
+            _enchant.enchantment.collectStats(_enchantStats, owner.playerLevel);
+        }        
     }
     
     public StatMap getGearStats() { // don't mutate me bro! (rethink this..)
@@ -756,8 +767,28 @@ public class PlayerSlot {
         update();
     }
     
-    public int getGearStat(StatT x, boolean effective) {
-        return _item == null ? 0 : _gearStats.getEffective(x);
+    public int getTotalStat(StatT stat, boolean effective) {
+        return getGearStat(stat, effective) 
+            + getSocketBonusStat(stat, effective, false)
+            + getGemsStat(stat, effective)
+            + getEnchantStat(stat, effective);
+    }
+    public int getSocketBonusStat(StatT stat, boolean effective, boolean ignoreInactive) {
+        return _item != null && (ignoreInactive || _socketBonusSatisfied) ? _socketBonusStats.get(stat, effective) : 0;
+    }
+    public int getGearStat(StatT stat, boolean effective) {
+        return _item != null ? _gearStats.get(stat, effective) : 0;
+    }
+    public int getGemsStat(StatT stat, boolean effective) {
+        if (_item == null) return 0;
+        int sum = 0;
+        for (int i = 0; i < _socketCount; i++) {
+            sum += _socket[i].getStat(stat, effective);
+        }
+        return sum;
+    }
+    public int getEnchantStat(StatT stat, boolean effective) {
+        return _item != null ? _enchantStats.get(stat, effective) : 0;
     }
     
     public void collectStats(StatMap stats) {        
@@ -785,7 +816,7 @@ public class PlayerSlot {
     */
     
     public int getBonusArmor() {
-        return _item == null || owner.spec == null || !owner.spec.role.bonusArmor ? 0 : _gearStats.get(StatT.ARMOR) + _socketBonusStats.get(StatT.ARMOR);
+        return _item == null || owner.spec == null || !owner.spec.role.bonusArmor ? 0 : _gearStats.getRaw(StatT.ARMOR) + _socketBonusStats.getRaw(StatT.ARMOR);
     }
     public int getBaseArmor() {
         return _baseArmor;
