@@ -3,8 +3,8 @@ package com.antistupid.warkit.items;
 import java.util.Arrays;
 import com.antistupid.warbase.structs.StatAlloc;
 import com.antistupid.warbase.stats.StatMap;
-import com.antistupid.warbase.data.PlayerScaling;
 import com.antistupid.warbase.types.ProfT;
+import com.antistupid.warkit.player.Player;
 
 public class Enchantment {
 
@@ -36,17 +36,6 @@ public class Enchantment {
         this.spells = spells;
         hasDesc = spells == null && (statAllocs != null || profBoosts != null); // wut: ((statAllocs == null) != (profBoosts == null));
     }
-    
-    @Override
-    public String toString() {
-        return String.format("%s<%d>", getClass().getSimpleName(), id);
-    }
-    
-    public String toDesc(int playerLevel) {
-        StringBuilder sb = new StringBuilder();
-        renderDesc(sb, playerLevel, null);
-        return sb.toString();
-    }    
     
     public StatMap getStats(int playerLevel) {
         StatMap stats = new StatMap();
@@ -96,8 +85,21 @@ public class Enchantment {
         return num;
     }
     
+    public String getDesc() { return getDesc(Player.MAX_PLAYER_LEVEL); }
+    public String getDesc(int playerLevel) {
+        StringBuilder sb = new StringBuilder();
+        renderDesc(sb, playerLevel, null);
+        return sb.toString();
+    }    
+    
+    @Override
+    public String toString() {
+        return String.format("%s<%d>(%s)", getClass().getSimpleName(), id, getDesc());
+    }
+    
+    // for debugging
     public void dump() {
-        System.out.println("Desc[100]: " + toDesc(100));
+        System.out.println("Desc[100]: " + getDesc(100));
         System.out.println("ScalingLevelMin: " + scalingLevelMin);
         System.out.println("ScalingLevelMax: " + scalingLevelMax);
         System.out.println("ScalingId: " + scalingId);

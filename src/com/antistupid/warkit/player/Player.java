@@ -109,6 +109,12 @@ public class Player {
         return null;
     }
     
+    public void forEach(Consumer<PlayerSlot> c) {
+        for (PlayerSlot x: SLOT) {
+            c.accept(x);
+        }
+    }
+    
     /*
     public void setPvP(boolean pvp) {
         this.pvpMode = pvp;
@@ -194,8 +200,28 @@ public class Player {
     }
     
     public void clearSlots() {
-        for (int i = 0; i < SLOT.length; i++) {
-            SLOT[i].clear();
+        for (PlayerSlot x: SLOT) {
+            x.clear();
+        }
+    }
+    
+    public void clearGems() {
+        for (PlayerSlot x: SLOT) {
+            x.clearGems();
+        }
+    }
+    
+    public void clearEnchants() { // and tinkers
+        for (PlayerSlot x: SLOT) {
+            x.setEnchant(null);
+            x.setTinker(null);
+        }
+    }
+    
+    public void clearUpgrades() { // and custom item levels
+        for (PlayerSlot x: SLOT) {
+            x._upgradeIndex = 0;
+            x.setCustomItemLevel(0);
         }
     }
     
@@ -259,7 +285,7 @@ public class Player {
     int uniqueCount(Unique unique, int ignoreSlotIndex, int ignoreGemIndex) {
         int count = 0;
         for (int i = 0; i < SLOT.length; i++) {
-            if (i == ignoreSlotIndex) continue;
+            if (ignoreGemIndex < 0 && i == ignoreSlotIndex) continue;
             Item item = SLOT[i]._item;
             if (item == null) continue;
             if (item.unique == unique) {

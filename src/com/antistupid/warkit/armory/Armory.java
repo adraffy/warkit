@@ -491,9 +491,20 @@ public class Armory {
                 } else {
                     errors.accept(String.format("%s: Unknown Enchant: %d", slot.slotType.name, enchantId));
                 }
-            }         
-            
-            
+            }     
+            int tinkerId = JSONHelp.getInt(paramMap, "tinker", 0);
+            if (tinkerId != 0) {                
+                ItemEnchant tinker = wk.findEnchant(item, tinkerId);
+                if (tinker != null) {    
+                    try {
+                        slot.setTinker(tinker);
+                    } catch (PlayerError err) {
+                        errors.accept(err.getMessage());
+                    }
+                } else {
+                    errors.accept(String.format("%s: Unknown Tinker: %d", slot.slotType.name, tinkerId));
+                }
+            }
         }
         
         /*

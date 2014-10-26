@@ -1,11 +1,13 @@
 package com.antistupid.warkit;
 
 import com.antistupid.warbase.HttpCache;
+import com.antistupid.warbase.ids.ItemClass;
 import java.nio.file.Paths;
 import com.antistupid.warbase.types.EquipT;
 import com.antistupid.warbase.types.RegionT;
 import com.antistupid.warkit.armory.Armory;
 import com.antistupid.warkit.examples.BnetForum;
+import com.antistupid.warkit.items.Consumable;
 import com.antistupid.warkit.items.Wearable;
 import com.antistupid.warkit.player.Player;
 import com.antistupid.warkit.player.coders.CompactGear;
@@ -31,9 +33,19 @@ public class Main {
         
         if (true) {
             
-            System.out.println(wk.consumeMap.get(58087).spell.duration);
-            
-            
+            for (Consumable x: wk.consumeMap.values()) {
+                if (x.type == ItemClass.Consumable.SCROLL) {
+                    System.out.println(x);
+                }
+                
+            }
+            return;
+        }    
+        
+        if (false) {
+            System.out.println(wk.consumeMap.get(58087));
+            System.out.println(wk.consumeMap.get(109220));
+            System.out.println(wk.consumeMap.get(58145));
             return;
         }
         

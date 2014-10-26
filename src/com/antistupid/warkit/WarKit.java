@@ -852,13 +852,14 @@ public class WarKit {
             }
             for (int index = 0; index < consumeItemCount; index++) {
                 int itemId = in.readInt();
+                int reqLevel = in.readUnsignedByte();
                 int type = in.readUnsignedByte();
                 int flags = in.readUnsignedByte();
                 String name = indexedString.read();
                 String icon = indexedString.read();
                 int spellId = in.readInt();
                 ConsumableSpell spell = consumeSpellMap.get(spellId); // never null                
-                consumeMap.put(itemId, new Consumable(itemId, name, icon,  type, flags, spell));
+                consumeMap.put(itemId, new Consumable(itemId, name, icon, type, flags, reqLevel, spell));
             }            
             System.out.println(String.format("WarKit (v%d, %tc) <%dms>", version, createdTime, (System.nanoTime() - startTime) / 1000000));
             return new WarKit(version, createdTime, wearableMap, gemMap, itemSetMap, itemBonusMap, enchantMap, consumeMap);

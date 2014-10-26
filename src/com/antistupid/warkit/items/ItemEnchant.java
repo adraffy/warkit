@@ -1,5 +1,8 @@
 package com.antistupid.warkit.items;
 
+import com.antistupid.warbase.stats.StatMap;
+import com.antistupid.warkit.player.Player;
+
 abstract public class ItemEnchant {
 
     public final int spellId;
@@ -31,6 +34,21 @@ abstract public class ItemEnchant {
     // does not check item level
     // does not check tinker
     abstract public boolean canApply(Item item);
+    
+    public void renderDesc(StringBuilder sb, int playerLevel, StatMap statBuf) {
+        sb.append(name);
+        if (enchantment.hasDesc) {
+            sb.append(": ");
+            enchantment.renderDesc(sb, playerLevel, statBuf);
+        }
+    }
+    
+    public String getDesc() { return getDesc(Player.MAX_PLAYER_LEVEL); }
+    public String getDesc(int playerLevel) {
+        StringBuilder sb = new StringBuilder();
+        renderDesc(sb, playerLevel, null);
+        return sb.toString();
+    }
     
     @Override
     public String toString() {

@@ -70,6 +70,7 @@ public class PlayerSlot {
     int _upgradeIndex;
     boolean _extraSocket;
     ItemEnchant _enchant;
+    ItemEnchant _tinker;
     
     // computed
     int _socketCount;
@@ -255,7 +256,6 @@ public class PlayerSlot {
                 throw new PlayerError.EquipSlot(this, item, String.format("%s requires %s (%d)", item.name, item.reqProf, item.reqProfLevel));
             }            
         }  
-        
         Unique u = item.unique;
         if (u != null) {
             int count = owner.uniqueCount(u, slotType.index, ignoreGemIndex);
@@ -558,25 +558,53 @@ public class PlayerSlot {
         return _reqLevel;
     }
     
-    public ItemEnchant getEnchant() {
-        return _enchant;
+    public ItemEnchant getTinker() {
+        return _tinker;
     }
-    //public boolean canEnchant(ItemEnchant enchant)
     
-    public void setEnchant(ItemEnchant enchant) {
-        if (enchant == null) {
-            _enchant = null;
+    public void setTinker(ItemEnchant tinker) {
+        if (tinker == null) {
+            _tinker = null;
             return;
         }
         if (_item == null) {
             return; // could error here
         }
-        int ilvl = getBaseItemLevel();
-        if (!enchant.checkItemLevel(ilvl)) {
-            throw new PlayerError.EquipSlot(this, _item, String.format("%s cannot be applied to items higher than level %d", enchant.name, enchant.maxItemLevel));
-        } else if (!enchant.canApply(_item)) {
-            throw new PlayerError.EquipSlot(this, _item, String.format("%s cannot be applied", enchant.name));
+        if (!tinker.isTinker) {
+            throw new PlayerError.EquipSlot(this, _item, String.format("%s is an enchant, not an tinker", tinker.name));
         }
+        checkEnchant(tinker);
+        _tinker = tinker; // allow this unchecked?
+    }
+    
+    private void checkEnchant(ItemEnchant e) {
+        int ilvl = getBaseItemLevel();
+        if (!e.checkItemLevel(ilvl)) {
+            throw new PlayerError.EquipSlot(this, _item, String.format("%s cannot be applied to items higher than level %d", e.name, e.maxItemLevel));
+        } else if (!e.canApply(_item)) {
+            throw new PlayerError.EquipSlot(this, _item, String.format("%s cannot be applied", e.name));
+        }
+    }
+    
+    public ItemEnchant getEnchant() {
+        return _enchant;
+    }
+    //public boolean canEnchant(ItemEnchant enchant)
+    
+    
+    public void setEnchant(ItemEnchant enchant) {
+        if (enchant == null) {
+            _enchant = null;
+            _enchantStats.clear();
+            return;
+        }
+        if (_item == null) {
+            return; // could error here
+        }
+        if (enchant.isTinker) {
+            throw new PlayerError.EquipSlot(this, _item, String.format("%s is a tinker, not an enchant", enchant.name));
+        }
+        checkEnchant(enchant);
         _enchant = enchant;  
         updateEnchant();
     }
@@ -693,6 +721,7 @@ public class PlayerSlot {
         }
         _socketCount = newSockets;
         updateSocketBonus();
+        updateEnchant();
     }
     
     void updateSocketBonus() {
@@ -738,7 +767,9 @@ public class PlayerSlot {
         }        
     }
     
-    public StatMap getGearStats() { // don't mutate me bro! (rethink this..)
+    // don't mutate me bro! (rethink this..)
+    // this is dangerous
+    public StatMap getGearStats() { 
         return _gearStats;
     }
     
@@ -867,6 +898,8 @@ public class PlayerSlot {
         _item = null;          
         _gearStats.clear();
         _enchant = null;
+        _enchantStats.clear();
+        _tinker = null;
         _nameDesc = null; 
         _quality = null;
         _itemLevelCustom = 0;
