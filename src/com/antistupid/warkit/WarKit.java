@@ -36,6 +36,7 @@ import com.antistupid.warbase.types.SocketT;
 import com.antistupid.warbase.types.SpecT;
 import com.antistupid.warbase.types.StatT;
 import com.antistupid.warbase.types.WeaponT;
+import com.antistupid.warbase.utils.SystemHelp;
 import com.antistupid.warkit.items.ItemEnchant;
 import com.antistupid.warkit.items.Armor;
 import com.antistupid.warkit.items.ArmorEnchant;
@@ -56,6 +57,7 @@ import com.antistupid.warkit.items.UpgradeChain;
 import com.antistupid.warkit.items.Weapon;
 import com.antistupid.warkit.items.WeaponEnchant;
 import com.antistupid.warkit.items.Wearable;
+import java.nio.file.Paths;
 
 public class WarKit {
    
@@ -203,6 +205,27 @@ public class WarKit {
         String read() throws IOException;
     }
     
+    static public final String FILE = "WKDB.dat";
+    static public WarKit load() { // try to find a local WKDB
+        Path path = Paths.get(FILE);
+        if (Files.isReadable(path)) {
+            return load(path);
+        }
+        // local debug only (remove me later)
+        path = Paths.get("../WarExport/", FILE);
+        if (Files.isReadable(path)) {
+            return load(path);
+        }        
+        path = SystemHelp.DATA_DIR.resolve(FILE);
+        if (Files.isReadable(path)) {
+            return load(path);
+        }
+        path = SystemHelp.HOME_DIR.resolve(FILE);
+        if (Files.isReadable(path)) {
+            return load(path);
+        }
+        throw new RuntimeException("Unable to locate WKDB.dat");
+    }
     static public WarKit load(Path file) {
         final long startTime = System.nanoTime();
 

@@ -7,7 +7,8 @@ import java.nio.file.Paths;
 import com.antistupid.warbase.types.EquipT;
 import com.antistupid.warbase.types.RegionT;
 import com.antistupid.warkit.armory.Armory;
-import com.antistupid.warkit.examples.BnetForum;
+import com.antistupid.warkit.examples.BnetForum_ContextDump;
+import com.antistupid.warkit.examples.BnetForum_EnchantDump;
 import com.antistupid.warkit.items.Consumable;
 import com.antistupid.warkit.items.Wearable;
 import com.antistupid.warkit.player.Player;
@@ -23,7 +24,7 @@ public class Main {
         // obfuscate api key
         String apiKey;
         try {
-            apiKey = new String(Files.readAllBytes(Paths.get("APIKey.txt")), StandardCharsets.UTF_8);
+            apiKey = new String(Files.readAllBytes(Paths.get("BlizzardAPIKey.txt")), StandardCharsets.UTF_8);
         } catch (IOException err) {
             return;
         }      
@@ -33,18 +34,13 @@ public class Main {
         Armory a = new Armory(wk, hc, apiKey);        
         
         
+         
         if (true) {
-            for (Wearable x: wk.wearableMap.values()) {
-                if (x.name.startsWith("QA")) {
-                    System.out.println(x.itemId + " # " + x.name);
-                }
-            }
-            
+            BnetForum_EnchantDump.main(null);
             return;
         }
         
-        if (true) {
-            
+        if (false) {            
             for (Consumable x: wk.consumeMap.values()) {
                 if (x.type == ConsumeT.SCROLL) {
                     System.out.println(x);
@@ -71,7 +67,7 @@ public class Main {
         }
         
         if (false) {
-            BnetForum.exportContexts(wk, Paths.get("BnetForumItemContexts.json"));
+            BnetForum_ContextDump.main(null);
             return;
         }
 

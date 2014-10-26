@@ -7,8 +7,8 @@ import com.antistupid.warbase.types.ProfT;
 import com.antistupid.warbase.types.QualityT;
 import com.antistupid.warbase.types.TypeT;
 
-abstract public class Item<T extends TypeT> {
-    
+abstract public class Item<T extends TypeT> extends BaseItem<T> {
+
     static public final Comparator<Item> CMP_ITEM_LEVEL_AZ = (a, b) -> Integer.compare(a.itemLevel, b.itemLevel);
     
     static public final Comparator<Item> CMP_ITEM_POWER_ZA = (a, b) -> {
@@ -16,16 +16,16 @@ abstract public class Item<T extends TypeT> {
         return c != 0 ? c : Integer.compare(b.quality.id, a.quality.id);
     };
 
-    public final int itemId;
+    //public final int itemId;
     public final int itemLevel; 
-    public final T type;
+    //public final T type;
     public final QualityT quality;
     public final EquipT equip;
     
     public final BindT bind;
     public final Unique unique;
     
-    public final String name;   
+    //public final String name;   
     public final String text;
     public final String icon; 
     
@@ -43,14 +43,15 @@ abstract public class Item<T extends TypeT> {
             BindT bind, Unique unique, String name, String text, String fileName,
             ProfT reqProf, int reqProfLevel, int reqRepId, int reqRepRank,
             long reqRace, long reqClass) {
-        this.itemId = itemId;
+        super(itemId, type, name);
+        //this.itemId = itemId;
         this.itemLevel = itemLevel;
-        this.type = type;
+        //this.type = type;
         this.quality = quality;
         this.equip = equip;
         this.bind = bind;
         this.unique = unique;
-        this.name = name;
+        //this.name = name;
         this.text = text;
         this.icon = fileName;
         //this.reqLevel = reqLevel;

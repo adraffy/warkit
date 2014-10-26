@@ -6,15 +6,16 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-public class BnetForum {
+public class BnetForum_ContextDump {
 
-    static public void exportContexts(WarKit wk, Path file) {
+    static public void main(String[] args) {
+        WarKit wk = WarKit.load();
         JSONObject root = new JSONObject();
         {
             // matches dungeon-heroic, dungeon-normal, dungeon-level...
@@ -42,7 +43,7 @@ public class BnetForum {
                     .collect(Collectors.toCollection(JSONArray::new)));
         }        
         try {
-            Files.write(file, root.toJSONString().getBytes(StandardCharsets.UTF_8));
+            Files.write(Paths.get("BnetForumItemContexts.json"), root.toJSONString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException err) {
             throw new UncheckedIOException(err);
         }  

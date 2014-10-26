@@ -6,22 +6,20 @@ import com.antistupid.warbase.types.ConsumeT;
 import com.antistupid.warbase.utils.WarBaseFmt;
 import com.antistupid.warkit.player.Player;
 
-public class Consumable {
+public class Consumable extends BaseItem<ConsumeT> {
     
-    public final int itemId;
-    public final String name;
+    //public final int itemId;
+    //public final String name;
     public final String icon;
-    public final ConsumeT type;
+    //public final ConsumeT type;
     public final boolean battle;
     public final boolean guardian;
     public final int reqLevel;
-    public final ConsumableSpell spell;
+    public final ConsumableSpell spell; // never null
     
     public Consumable(int itemId, String name, String icon, ConsumeT type, int flags, int reqLevel, ConsumableSpell spell) {
-        this.itemId = itemId;
-        this.name = name;
+        super(itemId, type, name);
         this.icon = icon;       
-        this.type = type;
         this.reqLevel = reqLevel;
         this.spell = spell;
         this.battle = (flags & 0x1) != 0;
