@@ -2,6 +2,7 @@ package com.antistupid.warkit.items;
 
 import com.antistupid.warbase.stats.StatMap;
 import com.antistupid.warbase.structs.StatAlloc;
+import com.antistupid.warbase.types.ConsumeT;
 import com.antistupid.warbase.utils.WarBaseFmt;
 import com.antistupid.warkit.player.Player;
 
@@ -10,13 +11,13 @@ public class Consumable {
     public final int itemId;
     public final String name;
     public final String icon;
-    public final int type;
+    public final ConsumeT type;
     public final boolean battle;
     public final boolean guardian;
     public final int reqLevel;
     public final ConsumableSpell spell;
     
-    public Consumable(int itemId, String name, String icon, int type, int flags, int reqLevel, ConsumableSpell spell) {
+    public Consumable(int itemId, String name, String icon, ConsumeT type, int flags, int reqLevel, ConsumableSpell spell) {
         this.itemId = itemId;
         this.name = name;
         this.icon = icon;       
@@ -57,7 +58,7 @@ public class Consumable {
         
     @Override
     public String toString() {
-        return String.format("%s<%d:%d>(%s)[%c%c]", getClass().getSimpleName(), itemId, spell.spellId, getDesc(), battle ? 'B' : '_', guardian ? 'G' : '_');
+        return String.format("%s<%d:%d>(%s:%s)[%c%c]", getClass().getSimpleName(), itemId, spell.spellId, type, getDesc(), battle ? 'B' : '_', guardian ? 'G' : '_');
     }
     
 }

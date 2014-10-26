@@ -34,7 +34,6 @@ public class Player {
     
     public int playerLevel = MAX_PLAYER_LEVEL;
     public boolean pvpMode;
-    public boolean asiaMode;
     public int scaledItemLevel;
 
     /*
@@ -134,7 +133,6 @@ public class Player {
         race = null;
         playerLevel = Player.MAX_PLAYER_LEVEL;
         pvpMode = false;
-        asiaMode = false;
         scaledItemLevel = 0;
     }
     
@@ -170,9 +168,15 @@ public class Player {
         playerName = p.playerName;
         playerMale = p.playerMale;
         playerLevel = p.playerLevel;
+        realmName = p.realmName;
+        realmSlug = p.realmSlug;
+        region = p.region;
         pvpMode = p.pvpMode;
-        asiaMode = p.asiaMode;
         scaledItemLevel = p.scaledItemLevel;
+    }
+    
+    public boolean isAsia() {
+        return region != null && region.asia;
     }
     
     // return true if was invalid
@@ -302,6 +306,8 @@ public class Player {
         return temp != null && temp.allowedEquip.twoHand;
     }
     */
+    
+    
     
     public boolean canArmorSpecialization() {
         return spec != null && playerLevel >= SpecT.PLAYER_LEVEL_ARMOR_SPECIALIZATION;

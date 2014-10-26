@@ -2,6 +2,7 @@ package com.antistupid.warkit;
 
 import com.antistupid.warbase.HttpCache;
 import com.antistupid.warbase.ids.ItemClass;
+import com.antistupid.warbase.types.ConsumeT;
 import java.nio.file.Paths;
 import com.antistupid.warbase.types.EquipT;
 import com.antistupid.warbase.types.RegionT;
@@ -31,10 +32,21 @@ public class Main {
         WarKit wk = WarKit.load(Paths.get("../WarExport/WKDB.dat"));            
         Armory a = new Armory(wk, hc, apiKey);        
         
+        
+        if (true) {
+            for (Wearable x: wk.wearableMap.values()) {
+                if (x.name.startsWith("QA")) {
+                    System.out.println(x.itemId + " # " + x.name);
+                }
+            }
+            
+            return;
+        }
+        
         if (true) {
             
             for (Consumable x: wk.consumeMap.values()) {
-                if (x.type == ItemClass.Consumable.SCROLL) {
+                if (x.type == ConsumeT.SCROLL) {
                     System.out.println(x);
                 }
                 

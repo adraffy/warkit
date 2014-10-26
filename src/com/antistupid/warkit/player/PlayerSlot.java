@@ -277,7 +277,7 @@ public class PlayerSlot {
         if (_item == null || _item.upgrade == null) {
             return null;
         } 
-        return _item.upgrade.getChain(owner.asiaMode);    
+        return _item.upgrade.getChain(owner.isAsia());    
     }
     public int getUpgradeLevel() {
         return _upgradeIndex; //_item == null ? 0 : _upgradeIndex
@@ -314,7 +314,7 @@ public class PlayerSlot {
                 throw new PlayerError.EquipSlot(this, _item, "Not upgradable");
             }            
         } else {
-            UpgradeChain chain = _item.upgrade.getChain(owner.asiaMode);     
+            UpgradeChain chain = getUpgradeChain(); 
             if (index < 0 || index >= chain.itemLevelDelta.length) {
                 throw new PlayerError.EquipSlot(this, _item, "Invalid upgrade level: " + index + " -> " + chain);
             }
@@ -329,7 +329,7 @@ public class PlayerSlot {
         }
         _itemLevelCustom = 0;
         if (_item.upgrade != null) {
-            UpgradeChain chain = _item.upgrade.getChain(owner.asiaMode);        
+            UpgradeChain chain = getUpgradeChain();
             _upgradeIndex = chain.itemLevelDelta.length - 1;
         }
         update();
@@ -878,6 +878,7 @@ public class PlayerSlot {
         _upgradeIndex = other._upgradeIndex;
         _extraSocket = other._extraSocket;
         _enchant = other._enchant;
+        _tinker = other._tinker;
         update(); // make sockets and stuff available again        
         for (int i = 0; i < _socketCount; i++) {
             try {

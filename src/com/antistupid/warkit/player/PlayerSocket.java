@@ -75,7 +75,7 @@ public class PlayerSocket {
     }  
     
     public boolean isGemEffectivelyEqual(PlayerSocket other) {
-        return other != null && _stats.isSame(other._stats) && Gem.areEffectivelyEqualWithoutScaling(_gem, other._gem);
+        return other != null && StatMap.areSame(_stats, other._stats) && Gem.areEffectivelyEqualWithoutScaling(_gem, other._gem);
     }
     
     public boolean isValid() {

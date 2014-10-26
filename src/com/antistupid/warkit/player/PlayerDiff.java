@@ -64,7 +64,7 @@ public class PlayerDiff {
         } else if (obj instanceof PlayerSocket) {
             return ((PlayerSocket)obj).getGemName(false);
         } else if (obj instanceof StatMap) {
-            return ((StatMap)obj).toString_noBracket(true); // this has brackets :|
+            return ((StatMap)obj).toString_noBracket(true);
         } else if (obj instanceof RandomSuffix) {
             return ((RandomSuffix)obj).name;
         } else if (obj instanceof ItemEnchant) {
@@ -97,8 +97,6 @@ public class PlayerDiff {
         }
         sb.append('\n');      
     }
-    
-    
     
     /*
      static String formatItemLevel(Profile.Slot slot) {
@@ -192,7 +190,7 @@ public class PlayerDiff {
             */
             StatMap sb1 = slot1.getSocketBonusStats();
             StatMap sb2 = slot2.getSocketBonusStats();
-            if (!sb1.isSame(sb2)) {
+            if (!StatMap.areSame(sb1, sb2)) {
                 socketDiffs.add(diff(String.format("%s/Bonus", slot.name), sb1, sb2));
             }
             
@@ -210,10 +208,10 @@ public class PlayerDiff {
             
             if (slot1.getEnchant() != slot2.getEnchant()) {
                 enchantDiffs.add(diff(slot.name, slot1.getEnchant(), slot2.getEnchant()));
-            }            
-            /*if (s1.tinker != s2.tinker) {
-                tinkerDiffs.add(diff(s1.type.title, BlizzT.getGemName(s1.tinker), BlizzT.getGemName(s2.tinker)));
-            }*/
+            }   
+            if (slot1.getTinker() != slot2.getTinker()) {
+                enchantDiffs.add(diff(slot.name, slot1.getTinker(), slot2.getTinker()));
+            }  
         }
         
         StatMap stats1 = new StatMap();        

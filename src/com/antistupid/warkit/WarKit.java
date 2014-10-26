@@ -25,6 +25,7 @@ import com.antistupid.warbase.ids.ItemClass;
 import com.antistupid.warbase.types.ArmorT;
 import com.antistupid.warbase.types.BindT;
 import com.antistupid.warbase.types.ClassT;
+import com.antistupid.warbase.types.ConsumeT;
 import com.antistupid.warbase.types.EquipT;
 import com.antistupid.warbase.types.GemT;
 import com.antistupid.warbase.types.ProfT;
@@ -853,7 +854,7 @@ public class WarKit {
             for (int index = 0; index < consumeItemCount; index++) {
                 int itemId = in.readInt();
                 int reqLevel = in.readUnsignedByte();
-                int type = in.readUnsignedByte();
+                ConsumeT type = ConsumeT.db.by_id.require(in.readUnsignedByte());
                 int flags = in.readUnsignedByte();
                 String name = indexedString.read();
                 String icon = indexedString.read();
