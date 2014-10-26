@@ -9,6 +9,7 @@ import com.antistupid.warbase.types.RegionT;
 import com.antistupid.warkit.armory.Armory;
 import com.antistupid.warkit.examples.BnetForum_ContextDump;
 import com.antistupid.warkit.examples.BnetForum_EnchantDump;
+import com.antistupid.warkit.examples.BnetForum_HeirloomWarbow;
 import com.antistupid.warkit.items.Consumable;
 import com.antistupid.warkit.items.Wearable;
 import com.antistupid.warkit.player.Player;
@@ -21,7 +22,7 @@ public class Main {
 
     static public void main(String[] args)  {
   
-        // obfuscate api key
+        // hide api key
         String apiKey;
         try {
             apiKey = new String(Files.readAllBytes(Paths.get("BlizzardAPIKey.txt")), StandardCharsets.UTF_8);
@@ -29,13 +30,17 @@ public class Main {
             return;
         }      
         
+        if (true) {
+            BnetForum_HeirloomWarbow.main(apiKey);
+            return;
+        }
+        
+        
         HttpCache hc = new HttpCache();       
         WarKit wk = WarKit.load(Paths.get("../WarExport/WKDB.dat"));            
         Armory a = new Armory(wk, hc, apiKey);        
         
-        
-         
-        if (true) {
+        if (false) {
             BnetForum_EnchantDump.main(null);
             return;
         }

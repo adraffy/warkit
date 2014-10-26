@@ -934,9 +934,8 @@ public class PlayerSlot {
         System.out.println("Name: " + getItemName(true, true, false));
         System.out.println("Armor: " + getTotalArmor());
         System.out.println("GearStats: " + _gearStats);
-        System.out.println("Sockets: " + Arrays.toString(getSockets()));
-        System.out.println("SocketBonus: " + _socketBonusStats);
-       
+        System.out.println("Enchant: " + _enchant + " -> " + _enchantStats);
+        System.out.println("Sockets: " + Arrays.toString(getSockets()));       
         if (_item instanceof Weapon) {
             Weapon w = (Weapon)_item;
 
@@ -952,7 +951,8 @@ public class PlayerSlot {
         for (int i = 0; i < _socketCount; i++) {            
             System.out.println("Socket" + i + ": " + _socket[i]);
         }
-        
+        System.out.println("SocketBonus: " + _socketBonusStats);
+       
         /*
                     Wearable _socketType;
     int _itemLevelCustom;
