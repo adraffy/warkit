@@ -11,5 +11,10 @@ public class ProfValue {
         this.prof = prof;
         this.value = value;
     }
+    
+    @Override
+    public String toString() {
+        return prof + "(" + value + ")";
+    }
 
 }

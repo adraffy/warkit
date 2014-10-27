@@ -109,9 +109,11 @@ public class SimcProfile {
         }
     }
     
+    /*
     static private boolean ignoreSlot(String name) {
         return name.equalsIgnoreCase("shirt") || name.equalsIgnoreCase("tabard");                        
     }
+    */
     
     static private final R<SlotT> SLOTS = new R<>();
     static {
@@ -317,7 +319,7 @@ public class SimcProfile {
                 if (key.startsWith("action")) {
                     continue;
                 }                
-                if (SLOTS.get(key) == null && !ignoreSlot(key)) {                    
+                if (SLOTS.get(key) == null) { // && !ignoreSlot(key)) {                    
                     errors.add(new LineError(lineno, line0, "Unknown option: "  + key));
                     continue;
                 }                   
@@ -327,9 +329,9 @@ public class SimcProfile {
                 }              
                 state = 2;                
             }
-            if (ignoreSlot(key)) {
+            /*if (ignoreSlot(key)) {
                 continue;
-            }
+            }*/
             SlotT slotType = SLOTS.get(key);
             if (slotType == null) {
                 errors.add(new LineError(lineno, line0, "Unknown slot: "  + key));
