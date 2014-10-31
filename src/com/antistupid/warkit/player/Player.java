@@ -10,8 +10,15 @@ import com.antistupid.warbase.types.SlotT;
 import com.antistupid.warbase.types.SpecT;
 import com.antistupid.warbase.types.StatT;
 import com.antistupid.warkit.items.Item;
+import com.antistupid.warkit.items.ItemSet;
+import com.antistupid.warkit.items.SetBonus;
 import com.antistupid.warkit.items.Unique;
 import com.antistupid.warkit.items.Wearable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class Player {
 
@@ -337,6 +344,47 @@ public class Player {
             }
         }
         return sum / num;
+    }
+    
+    // does not validate againt spec
+    public Map<Integer,ItemSet> getItemSets() { // integer = ItemSet.id
+        HashMap<Integer,ItemSet> map = new HashMap<>();
+        for (PlayerSlot x: SLOT) {
+            ItemSet set = x.getItemSet();
+            if (set != null) {    
+                map.put(set.id, set);
+            }
+        }
+        return map;
+    }
+    
+    // spec-specific bonuses if applicable
+    public Map<Integer,SetBonus> getItemSetBonuses() { // integer = SetBonus.spellId
+        HashMap<ItemSet,Integer> tally = new HashMap<>();
+        for (PlayerSlot x: SLOT) {
+            ItemSet set = x.getItemSet();
+            if (set != null) {                                
+                Integer old = tally.get(set);
+                if (old == null) {
+                    tally.put(set, 1);
+                } else {
+                    tally.put(set, old + 1);
+                }                
+            }
+        }
+        HashMap<Integer,SetBonus> map = new HashMap();
+        tally.forEach((set, num) -> {
+            SetBonus[] v = set.getBonuses(spec);
+            if (v == null) {
+                return;
+            }
+            for (SetBonus x: v) {
+                if (num >= x.thres) {
+                    map.put(x.spellId, x);
+                }
+            }
+        });
+        return map;        
     }
     
     public void validate() { validate(null, null); }

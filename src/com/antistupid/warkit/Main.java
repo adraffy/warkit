@@ -10,6 +10,7 @@ import com.antistupid.warkit.armory.Armory;
 import com.antistupid.warkit.examples.BnetForum_ContextDump;
 import com.antistupid.warkit.examples.BnetForum_EnchantDump;
 import com.antistupid.warkit.examples.BnetForum_HeirloomWarbow;
+import com.antistupid.warkit.examples.BnetForum_KromogBrutalFist;
 import com.antistupid.warkit.items.Consumable;
 import com.antistupid.warkit.items.Wearable;
 import com.antistupid.warkit.player.Player;
@@ -29,6 +30,11 @@ public class Main {
         } catch (IOException err) {
             return;
         }      
+        
+        if (true) {
+            BnetForum_KromogBrutalFist.main(args);
+            return;
+        }
         
         if (true) {
             BnetForum_HeirloomWarbow.main(apiKey);

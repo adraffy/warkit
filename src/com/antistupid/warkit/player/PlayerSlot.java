@@ -839,6 +839,38 @@ public class PlayerSlot {
         return _weaponDamage;
     }   
     
+    /*
+    float dmg = dps * w.speed / 1000f;
+    float min = dmg * (1 - w.range / 2);
+    float max = dmg * (1 + w.range / 2);
+    int roundedMin = (int)min;
+    int roundedMax = (int)(0.5 + max); // was ceiling...
+    float roundedDps = (roundedMin + roundedMax) * 500f / w.speed; 
+    */
+    
+    public double getWeaponDPS() {
+        if (_item instanceof Weapon) {
+            Weapon w = (Weapon)_item;        
+            return _weaponDamage * w.speed / 1000D;            
+        }
+        return Double.NaN;
+    }
+    
+    public double getWeaponVolatility() {
+        if (_item instanceof Weapon) {
+            Weapon w = (Weapon)_item;        
+            return w.range / 2D;        
+        }
+        return 0;
+    }
+    
+    public int getWeaponMin() {
+        return (int)(getWeaponDPS() * (1 - getWeaponVolatility()));  
+    }
+    public int getWeaponMax() {
+        return (int)(0.5 + getWeaponDPS() * (1 + getWeaponVolatility()));
+    }
+    
     
     /*
     public int getWeaponMillis() {

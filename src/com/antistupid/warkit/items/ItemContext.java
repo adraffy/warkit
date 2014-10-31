@@ -24,5 +24,10 @@ public class ItemContext {
         return optionalBonuses != null ? optionalBonuses.length : 0;
     }
     
+    @Override
+    public String toString() {
+        return String.format("%s(%s,%s)", getClass().getSimpleName(), context, defaultBonus);
+    }
+    
 
 }

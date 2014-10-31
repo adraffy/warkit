@@ -9,7 +9,7 @@ public class ItemSet {
     public final String name;
     public final int size;
     public final ProfValue reqProf;
-    public final SpecT[] specs;
+    public final SpecT[] specs; 
     public final SetBonus[][] bonuses;
     
     public ItemSet(int id, String name, int size, ProfValue reqProf, int specCount) {
@@ -19,6 +19,31 @@ public class ItemSet {
         this.reqProf = reqProf;
         specs = new SpecT[specCount];
         bonuses = new SetBonus[specCount][];
+    }
+    
+    public boolean isOldStyle() {
+        return specs.length == 1 && specs[0] == null;
+    }    
+    
+    public boolean canBenefitSpec(SpecT spec) {
+        return findSpec(spec) >= 0;
+    }
+    
+    public SetBonus[] getBonuses(SpecT spec) {
+        int index = findSpec(spec);
+        return index >= 0 ? bonuses[index] : null;
+    }
+    
+    public int findSpec(SpecT spec) {
+        if (isOldStyle()) {
+            return 0;
+        } 
+        for (int i = 0; i < specs.length; i++) {
+            if (specs[i] == spec) {
+                return i;
+            }            
+        }
+        return -1;        
     }
     
     @Override
